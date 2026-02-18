@@ -27,10 +27,26 @@ class Room(models.Model):
                     'board': [None] * 9,
                     'turn': 'X',
                     'winner': None,
-                    'players': {} # session_key: 'X' or 'O'
+                    'players': {} 
+                }
+            elif self.game_type == 'LUDO':
+                self.game_state = {
+                    'players': {}, # session: {color: 'RED', pieces: [0,0,0,0], ...}
+                    'turn': 'RED', # RED, GREEN, YELLOW, BLUE
+                    'dice_value': 0,
+                    'winner': None,
+                    'board': {} # track piece positions if needed, or just calculate from pieces
                 }
         
         super().save(*args, **kwargs)
 
+    @property
+    def is_expired(self):
+        from django.utils import timezone
+        import datetime
+        expiration_time = self.created_at + datetime.timedelta(minutes=5)
+        return timezone.now() > expiration_time
+
     def __str__(self):
         return f"{self.game_type} - {self.code}"
+

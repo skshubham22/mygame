@@ -11,14 +11,16 @@ def index(request):
             request.session['player_name'] = player_name
             
         action = request.POST.get('action')
-        room_code = request.POST.get('room_code')
         
-        if action == 'join' and room_code:
+        if action == 'join':
+            room_code = request.POST.get('room_code')
             try:
                 room = Room.objects.get(code=room_code)
+                if room.is_expired:
+                    return render(request, 'game/index.html', {'error': 'Room code expired (valid for 5 mins)'})
                 return redirect('room', room_code=room.code)
             except Room.DoesNotExist:
-                pass # Error handling
+                return render(request, 'game/index.html', {'error': 'Room not found'})
                 
         elif action == 'create':
             game_type = request.POST.get('game_type', 'TIC_TAC_TOE')

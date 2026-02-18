@@ -1,127 +1,89 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends 'game/base.html' %}
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Game Lobby - BoardGames</title>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --primary: #6C5CE7;
-            --secondary: #a29bfe;
-            --bg: #0f0f13;
-            --surface: #1e1e24;
-            --text: #ffffff;
-            --accent: #FD79A8;
-        }
+{% block title %}Game Lobby - BoardGames{% endblock %}
 
-        body {
-            font-family: 'Outfit', sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-        }
+{% block content %}
+<div class="container">
+    <h1>Board Games</h1>
 
-        .container {
-            background-color: var(--surface);
-            padding: 2rem;
-            border-radius: 1rem;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            width: 100%;
-            max-width: 400px;
-            text-align: center;
-        }
-
-        h1 {
-            color: var(--primary);
-            margin-bottom: 2rem;
-            font-weight: 600;
-        }
-
-        .btn {
-            display: block;
-            width: 100%;
-            padding: 1rem;
-            margin: 0.5rem 0;
-            border: none;
-            border-radius: 0.5rem;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .btn-primary {
-            background: linear-gradient(45deg, var(--primary), var(--secondary));
-            color: white;
-        }
-
-        .btn-secondary {
-            background-color: transparent;
-            border: 2px solid var(--secondary);
-            color: var(--secondary);
-        }
-
-        .btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(108, 92, 231, 0.4);
-        }
-
-        .input-group {
-            margin-top: 2rem;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            padding-top: 2rem;
-        }
-
-        input {
-            width: 100%;
-            padding: 1rem;
-            margin-bottom: 1rem;
-            background-color: rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 0.5rem;
-            color: white;
-            font-family: inherit;
-            box-sizing: border-box;
-        }
-
-        input:focus {
-            outline: none;
-            border-color: var(--primary);
-        }
-    </style>
-</head>
-
-<body>
-    <div class="container">
-        <h1>Board Games</h1>
-
-        <form method="post" action="{% url 'index' %}" id="gameForm">
-            {% csrf_token %}
-
-            <div style="margin-bottom: 2rem;">
-                <input type="text" name="player_name" placeholder="Enter Your Name" required
-                    style="background-color: rgba(255,255,255,0.1); border: 2px solid var(--primary); font-size: 1.2rem; text-align: center;">
-            </div>
-
-            <div class="actions">
-                <button type="submit" name="action" value="create" class="btn btn-primary">Create New Room</button>
-
-                <div class="input-group"
-                    style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
-                    <input type="text" name="room_code" placeholder="Enter Room Code (to Join)">
-                    <button type="submit" name="action" value="join" class="btn btn-secondary">Join Room</button>
-                </div>
-            </div>
-
-            <input type="hidden" name="game_type" value="TIC_TAC_TOE">
-        </form>
+    {% if error %}
+    <div
+        style="background-color: rgba(255, 118, 117, 0.2); border: 1px solid #ff7675; color: #ff7675; padding: 10px; border-radius: 5px; margin-bottom: 20px;">
+        {{ error }}
     </div>
-</body>
+    {% endif %}
 
-</html>
+    <form method="post" action="{% url 'index' %}" id="gameForm">
+        {% csrf_token %}
+
+        <div style="margin-bottom: 2rem;">
+            <input type="text" name="player_name" placeholder="Enter Your Name" required
+                style="background-color: rgba(255,255,255,0.1); border: 2px solid var(--primary); font-size: 1.2rem; text-align: center;">
+        </div>
+
+        <div class="actions">
+            <h3 style="margin-bottom: 0.5rem; color: var(--secondary);">Choose Game</h3>
+            <div class="game-selection">
+                <button type="submit" name="game_type" value="TIC_TAC_TOE" class="game-card"
+                    onclick="setAction('create')">
+                    <div class="icon">❌⭕</div>
+                    <span>Tic Tac Toe</span>
+                </button>
+                <button type="submit" name="game_type" value="LUDO" class="game-card" onclick="setAction('create')">
+                    <div class="icon">🎲</div>
+                    <span>Ludo</span>
+                </button>
+            </div>
+
+            <div class="input-group"
+                style="margin-top: 2rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+                <input type="text" name="room_code" placeholder="Enter Room Code (to Join)">
+                <button type="submit" name="action" value="join" class="btn btn-secondary"
+                    onclick="setAction('join')">Join Room</button>
+            </div>
+        </div>
+
+        <input type="hidden" name="action" id="form-action" value="create">
+
+        <script>
+            function setAction(action) {
+                document.getElementById('form-action').value = action;
+            }
+        </script>
+
+        <style>
+            .game-selection {
+                display: flex;
+                gap: 15px;
+                justify-content: center;
+                margin-bottom: 2rem;
+            }
+
+            .game-card {
+                background: rgba(255, 255, 255, 0.05);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 10px;
+                padding: 15px;
+                width: 120px;
+                cursor: pointer;
+                transition: all 0.3s;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                color: white;
+            }
+
+            .game-card:hover {
+                background: rgba(108, 92, 231, 0.2);
+                border-color: var(--primary);
+                transform: translateY(-5px);
+            }
+
+            .game-card .icon {
+                font-size: 2rem;
+                margin-bottom: 5px;
+            }
+        </style>
+    </form>
+</div>
+{% endblock %}
