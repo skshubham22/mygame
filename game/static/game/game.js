@@ -954,3 +954,8 @@ function showFloatingReaction(emoji) {
     setTimeout(() => el.remove(), 2000);
 }
 
+// Initialize Game Connection
+document.addEventListener('DOMContentLoaded', function () {
+    connect();
+});
+
