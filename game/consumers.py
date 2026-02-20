@@ -741,6 +741,8 @@ class GameConsumer(AsyncWebsocketConsumer):
             state['winner'] = None
             state['dice_value'] = 0
             state['turn'] = 'RED'
+        
+        room.game_state = state
         room.save()
         return True
 
