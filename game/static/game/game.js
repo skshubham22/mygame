@@ -112,16 +112,18 @@ function connect() {
 }
 
 function renderBoard(gameState) {
+    if (!gameState || !gameState.players) {
+        console.warn("DEBUG: renderBoard called with empty state");
+        return;
+    }
     try {
-        currentTurn = gameState.turn;
+        currentTurn = gameState.turn || 'RED';
         currentPhase = gameState.phase || 'ROLL';
         const winner = gameState.winner;
         const players = gameState.players;
-        const diceVal = gameState.dice_value;
+        const diceVal = gameState.dice_value || 0;
 
-        if (players) {
-            renderPlayers(players, currentTurn, diceVal);
-        }
+        renderPlayers(players, currentTurn, diceVal);
 
         if (winner) {
             checkWinnerDisplay(gameState);
@@ -177,6 +179,7 @@ function renderTicTacToe(board, winner) {
 }
 
 function renderLudo(gameState) {
+    if (!gameState || !gameState.players) return;
     console.log("DEBUG: Board dimensions:", boardDiv.clientWidth, "x", boardDiv.clientHeight);
     const extendedColors = ['ORANGE', 'PURPLE', 'CYAN', 'PINK'];
     const hasExtended = Object.values(gameState.players).some(p => extendedColors.includes(p.side));
