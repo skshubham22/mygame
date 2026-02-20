@@ -65,7 +65,7 @@ function connect() {
 
     socket.onmessage = function (e) {
         const data = JSON.parse(e.data);
-        console.log('Message:', data);
+        console.log('DEBUG: Received message:', data);
 
         if (data.type === 'game_start') {
             mySide = data.side;
@@ -177,15 +177,19 @@ function renderTicTacToe(board, winner) {
 }
 
 function renderLudo(gameState) {
+    console.log("DEBUG: Board dimensions:", boardDiv.clientWidth, "x", boardDiv.clientHeight);
     const extendedColors = ['ORANGE', 'PURPLE', 'CYAN', 'PINK'];
     const hasExtended = Object.values(gameState.players).some(p => extendedColors.includes(p.side));
     const is8Player = hasExtended || Object.keys(gameState.players).length > 4;
 
     if (boardDiv.children.length === 0 || (is8Player && !document.querySelector('.board-8'))) {
+        console.log("DEBUG: Building Ludo Board...");
         boardDiv.innerHTML = ''; // Clear
         if (is8Player) buildLudoBoard8();
         else buildLudoBoard();
     }
+
+    console.log("DEBUG: Rendering pieces for players:", Object.keys(gameState.players || {}));
 
     // Smart Render: Don't just remove all pieces. 
     // We want to identify which piece moved to animate it.
@@ -219,12 +223,19 @@ function renderLudo(gameState) {
 
     if (gameState.players) {
         Object.values(gameState.players).forEach(p => {
+            console.log("DEBUG: Player data:", p);
             const color = p.side;
             if (color === 'SPECTATOR') return;
+
+            if (!p.pieces) {
+                console.error("DEBUG: Player pieces missing!", p);
+                return;
+            }
 
             p.pieces.forEach((pos, idx) => {
                 const pieceId = `${color}_${idx}`;
                 let piece = existingPieces[pieceId];
+                console.log(`DEBUG: Processing piece ${pieceId} at pos ${pos}`);
 
                 // Calculate coords
                 let coords;

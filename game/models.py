@@ -23,7 +23,7 @@ class Room(models.Model):
         if not self.code:
             self.code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
         
-        if not self.game_state:
+        if not self.game_state or 'players' not in self.game_state:
             if self.game_type == 'TIC_TAC_TOE':
                 self.game_state = {
                     'board': [None] * 9,

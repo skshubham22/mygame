@@ -244,10 +244,14 @@ class GameConsumer(AsyncWebsocketConsumer):
         return room.game_state
 
     @database_sync_to_async
+    @database_sync_to_async
     def assign_player_side(self):
         room = Room.objects.get(code=self.room_code)
         state = room.game_state
-        players = state.get('players', {})
+        if 'players' not in state:
+            state['players'] = {}
+        players = state['players']
+        
         player_id = self.scope['session'].session_key or self.channel_name
         player_name = self.scope['session'].get('player_name', 'Unknown Player')
         
@@ -258,36 +262,23 @@ class GameConsumer(AsyncWebsocketConsumer):
             return players[player_id]['side']
         
         # Assign logic
+        side = 'SPECTATOR' # Default side
         if room.game_type == 'TIC_TAC_TOE':
-            if 'X' not in [p['side'] for p in players.values()]: side = 'X'
-            elif 'O' not in [p['side'] for p in players.values()]: side = 'O'
+            taken_sides = [p['side'] for p in players.values()]
+            if 'X' not in taken_sides: side = 'X'
+            elif 'O' not in taken_sides: side = 'O'
             else: side = 'SPECTATOR'
-        if room.game_type == 'LUDO':
+            players[player_id] = {'side': side, 'name': player_name, 'score': 0}
+
+        elif room.game_type == 'LUDO':
             # 8-Player Support
             base_colors = ['RED', 'GREEN', 'YELLOW', 'BLUE', 'ORANGE', 'PURPLE', 'CYAN', 'PINK']
-            # Limit based on room capacity?
-            # Assuming room.player_count is set correctly.
             colors = base_colors[:room.player_count] if room.player_count > 4 else base_colors[:4]
             
-            # Mode Logic
             if room.mode == 'COMPUTER':
-                # User gets first available (usually Red)
-                # Bots get the rest based on player_count
-                
-                # Check if user already has a side
-                if player_id in players:
-                    return players[player_id]['side']
-                    
-                # Assign side to user
-                taken = [p['side'] for p in players.values()]
-                available = [c for c in colors if c not in taken]
-                
-                # If room is empty or only bots exist, let user join as RED
                 is_user_active = any(not p.get('is_bot') for p in players.values())
-                
                 if not is_user_active:
                     side = 'RED'
-                    # Remove any old stale non-bot players if they were assigned RED
                     to_remove = [k for k, p in players.items() if p['side'] == 'RED' and not p.get('is_bot')]
                     for k in to_remove: del players[k]
 
@@ -296,7 +287,6 @@ class GameConsumer(AsyncWebsocketConsumer):
                         'pieces': [-1, -1, -1, -1], 'finished_pieces': 0, 'is_bot': False
                     }
                     
-                    # Ensure Bots exist
                     count = room.player_count
                     bot_colors = colors[1:count] 
                     for b_color in bot_colors:
@@ -310,20 +300,12 @@ class GameConsumer(AsyncWebsocketConsumer):
                     room.save()
                     return side
                 else:
-                    # User already active or rejoining? Check if this session is already in players.
                     if player_id in players:
                         return players[player_id]['side']
                     return 'SPECTATOR' 
 
             elif room.mode == 'LOCAL':
-                # Single session controls all players? 
-                # Or pass and play means we just need to assign colors to the *Session* but allow moves from that session for ANY color?
-                # Actually, standard Django Channels prevents this unless we map multiple sides to one session.
-                # Simplified Local Mode:
-                # User is 'RED' effectively, but `make_move` allows moving ANY piece if it's their turn.
-                
                 if not players:
-                     # Initialize all needed players
                      count = room.player_count
                      active_colors = colors[:count]
                      for c in active_colors:
@@ -331,8 +313,8 @@ class GameConsumer(AsyncWebsocketConsumer):
                             'side': c, 'name': f'Player {c}', 
                             'pieces': [-1, -1, -1, -1], 'finished_pieces': 0, 'is_bot': False, 'is_local': True
                         }
-                     players[player_id] = {'side': 'CONTROLLER', 'name': player_name} # Admin
-                
+                     players[player_id] = {'side': 'CONTROLLER', 'name': player_name}
+                room.game_state = state
                 room.save()
                 return 'CONTROLLER'
 
@@ -347,9 +329,8 @@ class GameConsumer(AsyncWebsocketConsumer):
                 'finished_pieces': 0,
                 'is_bot': False
             }
-        else: # TIC_TAC_TOE
-             players[player_id] = {'side': side, 'name': player_name, 'score': 0}
         
+        room.game_state = state
         room.save()
         return side
 
