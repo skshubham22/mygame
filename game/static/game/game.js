@@ -792,7 +792,6 @@ function resetGame() {
 }
 
 console.log("Game.js loaded");
-connect();
 
 // --- CHAT SYSTEM ---
 const stickerLibrary = [
