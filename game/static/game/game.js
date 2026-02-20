@@ -238,12 +238,18 @@ function renderLudo(gameState) {
                 }
 
                 if (coords) {
-                    // Use style for grid position
-                    // To animate, we can use transform translate? 
-                    // But combining Grid and Translate is tricky.
-                    // Let's just update Grid. 
-                    piece.style.gridRow = coords[0] + 1;
-                    piece.style.gridColumn = coords[1] + 1;
+                    // Use style for absolute position (Smooth Sliding)
+                    // varied by 6.66% per cell (100/15)
+                    const cellSize = 100 / 15;
+                    const topPos = coords[0] * cellSize;
+                    const leftPos = coords[1] * cellSize;
+
+                    // Add slight offset to center the piece in the cell
+                    // Piece is 5.6%, Cell is 6.66%. Difference is ~1%. Half is 0.5%
+                    const offset = (cellSize - 5.6) / 2;
+
+                    piece.style.top = (topPos + offset) + '%';
+                    piece.style.left = (leftPos + offset) + '%';
                 }
             });
         });
@@ -256,9 +262,11 @@ function renderLudo(gameState) {
     const diceContainer = document.getElementById('shared-dice');
     if (diceContainer) {
         const diceBox = diceContainer.querySelector('.dice-box');
+        const pColor = getPlayerColor(currentTurn);
 
-        // Update Border Color for current turn
-        diceContainer.style.borderColor = getPlayerColor(currentTurn);
+        // Update Border Color and Glow Variable for current turn
+        diceContainer.style.borderColor = pColor;
+        diceContainer.style.setProperty('--turn-color', pColor);
 
         // Render Value
         if (gameState.dice_value > 0) {
@@ -927,11 +935,11 @@ function displayChatMessage(msg, sender) {
     target.appendChild(div);
     target.scrollTop = target.scrollHeight;
 
-    // Auto-Remove after 60 seconds
+    // Auto-Remove after 30 seconds
     setTimeout(() => {
         div.classList.add('fade-out');
         setTimeout(() => div.remove(), 1000); // Wait for 1s animation
-    }, 59000); // Start fade at 59s
+    }, 29000); // Start fade at 29s
 }
 
 function showFloatingReaction(emoji) {

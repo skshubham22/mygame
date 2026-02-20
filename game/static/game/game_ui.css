@@ -560,47 +560,113 @@ Using Grid positioning is safest!
 /* Bases are relative. Inner box is 70% centered. */
 /* We place dice in the corners to minimize overlap. */
 
-/* Shared Dice Container */
-#shared-dice {
+/* Dice Wrapper - Floating Left of Board */
+.dice-wrapper {
     position: relative;
-    margin-top: 20px;
-    margin-bottom: 0px;
-    /* Space around dice */
-    /* order: -1; removed */
-    /* Position between Info (-2) and Board (0) */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    margin-right: 20px;
+    /* Space between dice and board */
+    animation: fadeIn 0.5s ease-out;
+}
 
-    /* Reset absolute */
-    top: auto;
-    left: auto;
-    transform: none;
-    z-index: 10;
-
-    width: 100%;
-    height: auto;
-    padding: 15px;
-    /* Bigger padding */
-    background: rgba(255, 255, 255, 0.05);
+/* The Dice Button Itself */
+.dice-btn {
+    width: 80px;
+    height: 80px;
+    background: #ffffff;
     border-radius: 20px;
-    border: 4px solid #ccc;
-    /* Will be colored by JS */
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-    cursor: pointer;
-    transition: all 0.2s;
+    /* Rounded square */
     display: flex;
     justify-content: center;
     align-items: center;
+    cursor: pointer;
+    box-shadow:
+        0 10px 25px rgba(0, 0, 0, 0.5),
+        /* Drop shadow */
+        inset 0 -5px 10px rgba(0, 0, 0, 0.1),
+        /* Inner depth */
+        0 0 0 4px rgba(255, 255, 255, 0.1);
+    /* White Outline ring */
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    border: 2px solid #eee;
 }
 
-#shared-dice:hover {
-    transform: scale(1.05);
-    /* Just scale */
+.dice-btn:hover {
+    transform: translateY(-5px) scale(1.05);
+    box-shadow:
+        0 15px 30px rgba(0, 0, 0, 0.6),
+        0 0 20px rgba(255, 255, 255, 0.4);
 }
 
-#shared-dice.active {
-    box-shadow: 0 0 20px currentColor;
-    /* Glow with border color */
-    animation: pulse 1s infinite;
+.dice-btn:active {
+    transform: translateY(2px) scale(0.95);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.4);
 }
+
+/* Active Turn Glow */
+/* Active Turn Glow */
+.dice-btn.active {
+    animation: pulse-glow 1.5s infinite;
+    border-color: var(--turn-color, currentColor) !important;
+    box-shadow: 0 0 15px var(--turn-color, rgba(255, 255, 255, 0.5));
+}
+
+@keyframes pulse-glow {
+    0% {
+        box-shadow: 0 0 0 0 var(--turn-color, rgba(255, 255, 255, 0.7));
+        transform: scale(1);
+    }
+
+    50% {
+        box-shadow: 0 0 10px 5px var(--turn-color, rgba(255, 255, 255, 0));
+        transform: scale(1.05);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 var(--turn-color, rgba(255, 255, 255, 0));
+        transform: scale(1);
+    }
+}
+
+/* Dice Box inside the button */
+.dice-box {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2rem;
+    font-weight: bold;
+    color: #333;
+}
+
+.dice-dot {
+    background-color: #333;
+    box-shadow: inset 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Label below dice */
+.dice-label {
+    margin-top: 10px;
+    font-family: var(--font-heading);
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.dice-wrapper:hover .dice-label {
+    opacity: 1;
+}
+
+/* Remove old shared-dice styles if any conflict */
 
 /* Wait, Bases are grid items. Absolute formatting might be tricky if they have overflow hidden? 
    They don't have overflow hidden.
@@ -962,51 +1028,95 @@ Using Grid positioning is safest!
 }
 
 /* LUDO PIECES */
+/* LUDO PIECES - 3D Pawn Style (Top Down) */
+/* LUDO PIECES - 3D Pawn Style (Top Down) */
 .ludo-piece {
-    width: 80%;
-    height: 80%;
+    width: 5.6%;
+    /* 85% of 1/15th (6.66%) ≈ 5.6% */
+    height: 5.6%;
     border-radius: 50%;
-    border: 2px solid white;
-    box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-    z-index: 5;
-    transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    /* Bouncy transition */
-    position: relative;
+    /* Base Body Styling */
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    box-shadow:
+        1px 2px 4px rgba(0, 0, 0, 0.5),
+        /* Drop shadow */
+        inset 0 -2px 5px rgba(0, 0, 0, 0.2);
+    /* Form shadow */
+    z-index: 50;
+    /* Ensure above cells */
+    transition: top 0.4s cubic-bezier(0.25, 1, 0.5, 1), left 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    /* Smooth sliding */
+    position: absolute;
+    /* Crucial for smooth movement */
     cursor: pointer;
+    /* Centering calculation done in JS or calc */
+    margin: 0;
 }
 
+/* Pawn Head (Top Circle) */
+.ludo-piece::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 65%;
+    /* Size relative to base */
+    height: 65%;
+    border-radius: 50%;
+    background: inherit;
+    /* Inherit gradient from parent (or set specific) */
+    box-shadow:
+        inset 1px 1px 3px rgba(255, 255, 255, 0.4),
+        /* Highlight */
+        inset -1px -1px 3px rgba(0, 0, 0, 0.2),
+        /* Shadow */
+        0 1px 2px rgba(0, 0, 0, 0.3);
+    /* Sep from body */
+    z-index: 6;
+    background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 50%);
+}
+
+/* Colors - Apply to Background */
 .ludo-piece.red {
-    background: linear-gradient(135deg, #ff0050, #990030);
+    background: radial-gradient(circle at 30% 30%, #ff5252, #b71c1c);
 }
 
 .ludo-piece.green {
-    background: linear-gradient(135deg, #00ff9f, #008f58);
+    background: radial-gradient(circle at 30% 30%, #69f0ae, #1b5e20);
 }
 
 .ludo-piece.blue {
-    background: linear-gradient(135deg, #00f2ea, #008f8a);
+    background: radial-gradient(circle at 30% 30%, #40c4ff, #01579b);
 }
 
 .ludo-piece.yellow {
-    background: linear-gradient(135deg, #f8e71c, #9c9111);
+    background: radial-gradient(circle at 30% 30%, #ffff00, #fbc02d);
 }
 
+/* Movable State - Subtle Ring Pulse */
 .ludo-piece.movable {
-    box-shadow: 0 0 15px white, 0 0 30px var(--primary);
-    transform: scale(1.1);
-    animation: bounce 1s infinite;
     z-index: 10;
+    animation: pawn-pulse 1.5s 2;
+    /* Limit to 2 times */
 }
 
-@keyframes bounce {
+.ludo-piece.movable::after {
+    /* Optional: extra highlight on head when picking */
+    background-color: rgba(255, 255, 255, 0.1);
+}
 
-    0%,
-    100% {
-        transform: scale(1.1);
+@keyframes pawn-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
     }
 
-    50% {
-        transform: scale(1.25);
+    70% {
+        box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
     }
 }
 
@@ -1061,41 +1171,7 @@ Using Grid positioning is safest!
     padding: 10px 0;
 }
 
-/* 3D Tokens (Marbles/Pawns) */
-.token {
-    width: 80%;
-    height: 80%;
-    border-radius: 50%;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 5;
-    cursor: pointer;
-    border: 2px solid rgba(255, 255, 255, 0.4);
-    box-shadow:
-        inset -2px -2px 6px rgba(0, 0, 0, 0.4),
-        inset 2px 2px 6px rgba(255, 255, 255, 0.4),
-        1px 2px 4px rgba(0, 0, 0, 0.6);
-    /* Drop shadow */
-    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
 
-.token.red {
-    background: radial-gradient(circle at 30% 30%, #ff8a80, #d50000);
-}
-
-.token.green {
-    background: radial-gradient(circle at 30% 30%, #b9f6ca, #00c853);
-}
-
-.token.blue {
-    background: radial-gradient(circle at 30% 30%, #80d8ff, #0091ea);
-}
-
-.token.yellow {
-    background: radial-gradient(circle at 30% 30%, #ffff8d, #ffd600);
-}
 
 /* Sticker Picker */
 .sticker-picker {
@@ -1276,7 +1352,8 @@ Using Grid positioning is safest!
     padding: 10px;
     color: var(--text);
     font-family: var(--font-body);
-    z-index: 100;
+    z-index: 200;
+    /* Ensure above Ludo pieces */
     pointer-events: none;
 }
 
@@ -1305,17 +1382,68 @@ Using Grid positioning is safest!
     font-family: var(--font-body);
     opacity: 0.7;
 }
+
 /* Force Z-Index Layering */
-.ludo-base { z-index: 1 !important; }
-.ludo-piece { z-index: 100 !important; }
-.dice-dot { z-index: 5; background-color: #000 !important; }
+.ludo-base {
+    z-index: 1 !important;
+}
+
+.ludo-piece {
+    z-index: 100 !important;
+}
+
+.dice-dot {
+    z-index: 5;
+    background-color: #000 !important;
+}
 
 /* Chat Area Styling Fix */
-.chat-section { background: #000; border: 1px solid #333; border-radius: 10px; padding: 10px; margin-top: 20px; flex-grow: 1; display: flex; flex-direction: column; min-height: 200px; }
-.chat-messages { flex-grow: 1; background: #111; border-radius: 5px; padding: 10px; margin-bottom: 10px; overflow-y: auto; max-height: 300px; border: 1px solid #222; }
-.chat-msg { margin-bottom: 5px; padding: 5px 10px; border-radius: 5px; background: rgba(255, 255, 255, 0.1); }
-.chat-msg.self { background: rgba(0, 242, 234, 0.2); text-align: right; }
+.chat-section {
+    background: #000;
+    border: 1px solid #333;
+    border-radius: 10px;
+    padding: 10px;
+    margin-top: 20px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 200px;
+}
+
+.chat-messages {
+    flex-grow: 1;
+    background: #111;
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+    overflow-y: auto;
+    max-height: 300px;
+    border: 1px solid #222;
+}
+
+.chat-msg {
+    margin-bottom: 5px;
+    padding: 5px 10px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.chat-msg.self {
+    background: rgba(0, 242, 234, 0.2);
+    text-align: right;
+}
 
 /* Properties for Chat Fade Out */
-@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
-.fade-out { animation: fadeOut 1s forwards; }
+@keyframes fadeOut {
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
+}
+
+.fade-out {
+    animation: fadeOut 1s forwards;
+}
