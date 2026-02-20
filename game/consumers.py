@@ -91,7 +91,9 @@ class GameConsumer(AsyncWebsocketConsumer):
     async def make_move(self, data):
         index = data.get('index')
         player = data.get('player')
-        if await self.update_game_state(index, player):
+        success, error_msg = await self.update_game_state(index, player)
+        
+        if success:
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {'type': 'game_update', 'game_state': await self.get_game_state()}
@@ -99,6 +101,12 @@ class GameConsumer(AsyncWebsocketConsumer):
             
             # Check for bot
             await self.trigger_bot_if_needed()
+        elif error_msg:
+            # Send error only to the player who made the move
+            await self.send(text_data=json.dumps({
+                'type': 'error',
+                'message': error_msg
+            }))
 
     async def roll_dice(self, data):
         player = data.get('player')
@@ -244,7 +252,6 @@ class GameConsumer(AsyncWebsocketConsumer):
         return room.game_state
 
     @database_sync_to_async
-    @database_sync_to_async
     def assign_player_side(self):
         room = Room.objects.get(code=self.room_code)
         state = room.game_state
@@ -340,10 +347,8 @@ class GameConsumer(AsyncWebsocketConsumer):
         state = room.game_state
         
         if room.game_type == 'TIC_TAC_TOE':
-            # ... (TicTacToe logic logic unchanged for now, but need to reconstruct if replaced fully)
-            # Re-implementing TicTacToe logic briefly as it was inside the block
              if state.get('game_over', False) or state['board'][index] is not None or state['turn'] != player:
-                return False
+                return False, "Invalid move or not your turn"
              state['board'][index] = player
              if self.check_winner(state['board'], player):
                 state['winner'] = player
@@ -354,15 +359,11 @@ class GameConsumer(AsyncWebsocketConsumer):
              else:
                 state['turn'] = 'O' if player == 'X' else 'X'
              room.save()
-             return True
+             return True, None
 
         elif room.game_type == 'LUDO':
             if state['turn'] != player or state.get('phase') != 'MOVE':
-                await self.send(text_data=json.dumps({
-                    'type': 'error',
-                    'message': 'Not your turn or wait for roll!'
-                }))
-                return False
+                return False, "Not your turn or wait for roll!"
             
             piece_idx = index # 0-3
             dice_val = state['dice_value']
@@ -376,7 +377,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                     p_data = p
                     break
             
-            if not p_data: return False
+            if not p_data: return False, "Player data not found"
             
             current_pos = p_data['pieces'][piece_idx]
             
@@ -387,34 +388,38 @@ class GameConsumer(AsyncWebsocketConsumer):
                 if dice_val == 6:
                     new_pos = 0 # Move to start
                 else:
-                    await self.send(text_data=json.dumps({
-                        'type': 'error',
-                        'message': 'Need a 6 to start!'
-                    }))
-                    return False 
+                    return False, "Need a 6 to start!"
             elif current_pos == 57:
-                return False # Already finished
+                return False, "Piece already finished"
             else:
                 if current_pos + dice_val > 57:
-                    return False # Cannot move
+                    return False, "Move exceeds home"
                 new_pos = current_pos + dice_val
-                
-            # Update Position
+            
+            # Execute Move
             p_data['pieces'][piece_idx] = new_pos
             
-            # Check Actions (Capture, Home)
+            # Final position
             if new_pos == 57:
-                p_data['finished_pieces'] = p_data.get('finished_pieces', 0) + 1
+                p_data['finished_pieces'] += 1
                 if p_data['finished_pieces'] == 4:
                     state['winner'] = player
-            elif new_pos < 52: # Main board, check collision
-                 self.check_collision(state, player, new_pos)
             
-            self.next_turn(state)
+            # Capture logic
+            capture = False
+            if new_pos != -1 and new_pos < 52:
+                capture = self.check_collision(state, player, new_pos)
+            
+            # Next Turn if not a six and no capture
+            if dice_val != 6 and not capture:
+                self.next_turn(state)
+            else:
+                state['phase'] = 'ROLL' # Roll again
+            
+            room.game_state = state
             room.save()
-            return True
-            
-        return False
+            return True, None
+        return False, "Unknown game type"
 
     def check_collision(self, state, player_color, piece_pos):
         # Determine Board Configuration
