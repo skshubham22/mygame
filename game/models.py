@@ -28,6 +28,7 @@ class Room(models.Model):
                 self.game_state = {
                     'board': [None] * 9,
                     'turn': 'X',
+                    'starting_turn': 'X',
                     'winner': None,
                     'players': {} 
                 }

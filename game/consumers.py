@@ -165,7 +165,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         }))
 
     async def handle_ai_command(self, message):
-        import urllib.request
+        import aiohttp
         import random
         
         cmd = message.lower().strip()
@@ -173,29 +173,26 @@ class GameConsumer(AsyncWebsocketConsumer):
         sender_name = "LudoBot 🤖"
         
         try:
-            if "meme" in cmd:
-                # Fetch meme
-                url = "https://meme-api.com/gimme"
-                with urllib.request.urlopen(url) as response:
-                    data = json.loads(response.read().decode())
-                    response_msg = data.get('url', 'Could not fetch meme :(')
-            
-            elif "sticker" in cmd or "cat" in cmd:
-                # Fetch cat sticker (using cataas or similar)
-                # Cataas sometimes is slow, tried robohash?
-                # Let's use robohash for "Sticker" if keyword is generic, or cataas if cat.
-                if "cat" in cmd:
-                     # cataas json
-                     # url = "https://cataas.com/cat?json=true"
-                     # simplified: just use the image url pattern with a random cachebuster
-                     response_msg = f"https://cataas.com/cat?t={random.randint(1,1000)}"
+            async with aiohttp.ClientSession() as session:
+                if "meme" in cmd:
+                    # Fetch meme
+                    url = "https://meme-api.com/gimme"
+                    async with session.get(url) as response:
+                        if response.status == 200:
+                            data = await response.json()
+                            response_msg = data.get('url', 'Could not fetch meme :(')
+                
+                elif "sticker" in cmd or "cat" in cmd:
+                    if "cat" in cmd:
+                         # simplified: just use the image url pattern with a random cachebuster
+                         response_msg = f"https://cataas.com/cat?t={random.randint(1,1000)}"
+                    else:
+                        # Generic sticker from robohash
+                        seed = random.randint(1, 1000)
+                        response_msg = f"https://robohash.org/{seed}.png?set=set2&size=200x200"
+                
                 else:
-                    # Generic sticker from robohash
-                    seed = random.randint(1, 1000)
-                    response_msg = f"https://robohash.org/{seed}.png?set=set2&size=200x200"
-            
-            else:
-                response_msg = "I can send you a 'meme' or a 'sticker' (try '@ai meme' or '@ai sticker')"
+                    response_msg = "I can send you a 'meme' or a 'sticker' (try '@ai meme' or '@ai sticker')"
             
             # Send AI Response
             if response_msg:
@@ -218,8 +215,6 @@ class GameConsumer(AsyncWebsocketConsumer):
                 }
             )
 
-
-
     async def search_stickers(self, data):
         query = data.get('query', '').lower().strip()
         results = []
@@ -238,16 +233,9 @@ class GameConsumer(AsyncWebsocketConsumer):
         results.append(f"https://loremflickr.com/150/150/{query}?lock={random.randint(1,1000)}")
         
         # Send results back to requester ONLY (not broadcast)
-        # But for simplicity, we can send to group? No, requester is better.
-        # Self send.
         await self.send(text_data=json.dumps({
             'type': 'sticker_search_results',
             'results': results
-        }))
-        await self.send(text_data=json.dumps({
-            'type': 'chat_message',
-            'message': event['message'],
-            'sender': event['sender']
         }))
 
     @database_sync_to_async
@@ -488,16 +476,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                         # To implement "Capture Bonus Turn", we'd need to modify next_turn logic.
                         # For now, let's just capture.
 
-    def check_winner(self, board, player):
-        wins = [
-            [0, 1, 2], [3, 4, 5], [6, 7, 8], # Rows
-            [0, 3, 6], [1, 4, 7], [2, 5, 8], # Cols
-            [0, 4, 8], [2, 4, 6]             # Diagonals
-        ]
-        for combo in wins:
-            if all(board[i] == player for i in combo):
-                return True
-        return False
+
 
     @database_sync_to_async
     def update_dice_state(self, player, value):
@@ -750,7 +729,14 @@ class GameConsumer(AsyncWebsocketConsumer):
             state['board'] = [None] * 9
             state['winner'] = None
             state['game_over'] = False
-            state['turn'] = 'X'
+            
+            # Alternate starting turn
+            current_start = state.get('starting_turn', 'X')
+            new_start = 'O' if current_start == 'X' else 'X'
+            state['starting_turn'] = new_start
+            state['turn'] = new_start
+            print(f"DEBUG: Resetting game. Old start: {current_start}, New start: {new_start}")
+
         elif room.game_type == 'LUDO':
             state['winner'] = None
             state['dice_value'] = 0

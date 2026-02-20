@@ -91,34 +91,42 @@ function connect() {
 }
 
 function renderBoard(gameState) {
-    currentTurn = gameState.turn;
-    currentPhase = gameState.phase || 'ROLL';
-    const winner = gameState.winner;
-    const players = gameState.players;
-    const diceVal = gameState.dice_value;
+    try {
+        currentTurn = gameState.turn;
+        currentPhase = gameState.phase || 'ROLL';
+        const winner = gameState.winner;
+        const players = gameState.players;
+        const diceVal = gameState.dice_value;
 
-    if (players) {
-        renderPlayers(players, currentTurn, diceVal);
-    }
-
-    if (winner) {
-        checkWinnerDisplay(gameState);
-    } else {
-        let statusText = `Turn: ${currentTurn}`;
-        if (currentTurn === mySide) {
-            if (gameType === 'LUDO') {
-                statusText += ` (${currentPhase === 'ROLL' ? 'Roll Dice!' : 'Move a Piece!'})`;
-            } else {
-                statusText += ` (Your Turn)`;
-            }
+        if (players) {
+            renderPlayers(players, currentTurn, diceVal);
         }
-        if (statusDiv) statusDiv.innerText = statusText;
-    }
 
-    if (gameType === 'TIC_TAC_TOE') {
-        renderTicTacToe(gameState.board, winner);
-    } else if (gameType === 'LUDO') {
-        renderLudo(gameState);
+        if (winner) {
+            checkWinnerDisplay(gameState);
+        } else {
+            let statusText = `Turn: ${currentTurn}`;
+            if (currentTurn === mySide) {
+                if (gameType === 'LUDO') {
+                    statusText += ` (${currentPhase === 'ROLL' ? 'Roll Dice!' : 'Move a Piece!'})`;
+                } else {
+                    statusText += ` (Your Turn)`;
+                }
+            }
+            if (statusDiv) statusDiv.innerText = statusText;
+        }
+
+        if (gameType === 'TIC_TAC_TOE') {
+            renderTicTacToe(gameState.board, winner);
+        } else if (gameType === 'LUDO') {
+            renderLudo(gameState);
+        }
+    } catch (e) {
+        console.error("Render Error:", e);
+        if (statusDiv) {
+            statusDiv.innerHTML = `<span style="color:red">Error: ${e.message}</span>`;
+        }
+        alert("Game Error: " + e.message + "\nCheck console for details.");
     }
 }
 
@@ -918,6 +926,12 @@ function displayChatMessage(msg, sender) {
 
     target.appendChild(div);
     target.scrollTop = target.scrollHeight;
+
+    // Auto-Remove after 60 seconds
+    setTimeout(() => {
+        div.classList.add('fade-out');
+        setTimeout(() => div.remove(), 1000); // Wait for 1s animation
+    }, 59000); // Start fade at 59s
 }
 
 function showFloatingReaction(emoji) {

@@ -4,3 +4,4 @@ daphne
 whitenoise
 uvicorn
 channels_redis
+aiohttp

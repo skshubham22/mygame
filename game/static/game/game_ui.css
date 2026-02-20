@@ -1304,3 +1304,17 @@ Using Grid positioning is safest!
     font-family: var(--font-body);
     opacity: 0.7;
 }
+/* Force Z-Index Layering */
+.ludo-base { z-index: 1 !important; }
+.ludo-piece { z-index: 100 !important; }
+.dice-dot { z-index: 5; background-color: #000 !important; }
+
+/* Chat Area Styling Fix */
+.chat-section { background: #000; border: 1px solid #333; border-radius: 10px; padding: 10px; margin-top: 20px; flex-grow: 1; display: flex; flex-direction: column; min-height: 200px; }
+.chat-messages { flex-grow: 1; background: #111; border-radius: 5px; padding: 10px; margin-bottom: 10px; overflow-y: auto; max-height: 300px; border: 1px solid #222; }
+.chat-msg { margin-bottom: 5px; padding: 5px 10px; border-radius: 5px; background: rgba(255, 255, 255, 0.1); }
+.chat-msg.self { background: rgba(0, 242, 234, 0.2); text-align: right; }
+
+/* Properties for Chat Fade Out */
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+.fade-out { animation: fadeOut 1s forwards; }
