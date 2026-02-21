@@ -2,6 +2,8 @@
 # exit on error
 set -o errexit
 
+export PYTHONPATH=$PYTHONPATH:.
+
 pip install -r requirements.txt
 
 # Convert static assets
