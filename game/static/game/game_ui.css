@@ -89,94 +89,115 @@ body {
     align-items: center;
     justify-content: center;
     gap: 20px;
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
 
 .board-section {
-    flex: 1;
+    flex: 1.5;
     display: flex;
     justify-content: center;
     align-items: center;
     height: 100%;
+    min-width: 0;
 }
 
 .info-section {
-    width: 300px;
-    /* Fixed width sidebar */
+    width: 320px;
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    gap: 20px;
-    background: rgba(0, 0, 0, 0.6);
+    justify-content: flex-start;
+    gap: 15px;
+    background: rgba(0, 0, 0, 0.7);
     padding: 20px;
     border-radius: 20px;
-    backdrop-filter: blur(10px);
-    max-height: 90vh;
-    overflow-y: auto;
-
+    backdrop-filter: blur(15px);
+    height: 95vh;
+    border: 1px solid rgba(255, 255, 255, 0.05);
     order: -2;
-    /* Move to LEFTMOST on Desktop */
 }
 
 /* Responsive: Mobile / Portrait */
 @media (max-width: 900px) {
     .game-layout {
         flex-direction: column;
+        justify-content: flex-start;
+        overflow-y: auto;
+        padding-top: 10px;
+        gap: 10px;
     }
 
     .info-section {
         width: 100%;
         height: auto;
-        flex-direction: row;
-        /* Horizontal info on mobile? */
-        flex-wrap: wrap;
-        justify-content: space-between;
-        align-items: center;
-        padding: 5px;
-        background: transparent;
+        min-height: auto;
+        flex-direction: column;
+        padding: 10px;
+        background: rgba(0, 0, 0, 0.4);
         order: -1;
-        /* Keep on top for mobile too */
+        border-radius: 10px;
+        backdrop-filter: none;
     }
 
     .header h1 {
-        font-size: 1.2rem;
-        /* Smaller text */
+        font-size: 1.1rem;
+        margin-bottom: 2px;
     }
 
     .players-list {
-        margin-bottom: 0;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-bottom: 10px;
     }
 
-    /* Hide some controls or make compact */
+    .player-card {
+        padding: 5px 8px;
+        min-width: 70px;
+        font-size: 0.8rem;
+    }
+
+    .player-score {
+        font-size: 1.1rem;
+    }
+
+    /* Keep controls visible but compact */
     .controls {
-        display: none;
-        /* Maybe hide leave button or make small icon? */
-        /* Users can use back button */
+        display: flex;
+        gap: 5px;
+        justify-content: center;
     }
 
     .board-section {
-        flex: 1;
+        flex: none;
         width: 100%;
-        align-items: flex-start;
-        /* Top align board */
+        height: auto;
+        padding: 10px 0;
     }
 
     /* Adjust board size for mobile */
     #game-board {
-        width: 85vmin;
-        /* Slightly larger on mobile as sidebar is separate */
-        height: 85vmin;
+        width: 90vmin !important;
+        height: 90vmin !important;
     }
 
     #game-board.ludo {
-        width: 85vmin;
-        height: 85vmin;
-        max-height: 55vh;
-        max-width: 55vh;
+        max-height: 85vw;
+        max-width: 85vw;
     }
 
     #game-board.tic_tac_toe {
-        width: 70vmin;
-        height: 70vmin;
+        width: 80vmin !important;
+        height: 80vmin !important;
+    }
+
+    .sticker-picker {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 60vh;
+        border-radius: 20px 20px 0 0;
+        background: rgba(10, 10, 15, 0.98);
+        border: 2px solid var(--primary);
     }
 }
 
