@@ -50,7 +50,9 @@ class Room(models.Model):
                     'turn': 'RED',
                     'dice_value': 0,
                     'winner': None,
-                    'phase': 'ROLL' # ROLL or MOVE
+                    'phase': 'ROLL',
+                    'mode': self.mode,
+                    'player_count': self.player_count
                 }
         
         super().save(*args, **kwargs)

@@ -66,6 +66,7 @@ function connect() {
     socket.onmessage = function (e) {
         const data = JSON.parse(e.data);
         console.log('DEBUG: Received message:', data);
+        socket.lastState = data.game_state;
 
         if (data.type === 'game_start') {
             mySide = data.side;
@@ -389,60 +390,77 @@ function renderSnakesAndLadders(gameState) {
 
     // Render Pieces
     const players = gameState.players || {};
-    Object.values(players).forEach(p => {
+    Object.values(players).forEach((p, pIdx) => {
         const color = p.side.toLowerCase();
-        if (color === 'spectator') return;
+        if (color === 'spectator' || color === 'controller') return;
 
-        let piece = document.getElementById(`sl-piece-${color}`);
+        let pieceId = `sl-piece-${color}`;
+        let shadowId = `sl-shadow-${color}`;
+        let piece = document.getElementById(pieceId);
+        let shadow = document.getElementById(shadowId);
+
         if (!piece) {
             piece = document.createElement('div');
-            piece.id = `sl-piece-${color}`;
+            piece.id = pieceId;
             piece.className = `sl-piece ${color}`;
             boardDiv.appendChild(piece);
+
+            shadow = document.createElement('div');
+            shadow.id = shadowId;
+            shadow.className = `sl-piece-shadow`;
+            boardDiv.appendChild(shadow);
         }
 
         const pos = p.pos || 0;
         if (pos === 0) {
-            // Off-board start
-            piece.style.opacity = '0.3';
-            piece.style.bottom = '-30px';
-            piece.style.left = '45%';
+            piece.style.display = 'none';
+            shadow.style.display = 'none';
         } else {
-            piece.style.opacity = '1';
+            piece.style.display = 'flex';
+            shadow.style.display = 'block';
             const cell = document.getElementById(`sl-cell-${pos}`);
             if (cell) {
-                const rect = cell.getBoundingClientRect();
-                const boardRect = boardDiv.getBoundingClientRect();
+                // Adjust for 3D pawn (base at center)
+                const top = ((cell.offsetTop + cell.offsetHeight / 2 - 55) / boardDiv.offsetHeight) * 100;
+                const left = ((cell.offsetLeft + cell.offsetWidth / 2 - 21) / boardDiv.offsetWidth) * 100;
+                const shadowTop = ((cell.offsetTop + cell.offsetHeight / 2 + 5) / boardDiv.offsetHeight) * 100;
 
-                // Position relative to board
-                const top = ((cell.offsetTop + cell.offsetHeight / 2 - 12.5) / boardDiv.offsetHeight) * 100;
-                const left = ((cell.offsetLeft + cell.offsetWidth / 2 - 12.5) / boardDiv.offsetWidth) * 100;
-
-                // Offset pieces slightly if they are on same cell
-                const sameCellCount = Object.values(players).filter(other => other.pos === pos && other.side !== p.side).length;
-                const pIdx = Object.values(players).indexOf(p);
-
-                piece.style.top = (top + (pIdx * 2)) + '%';
-                piece.style.left = (left + (pIdx * 2)) + '%';
+                const offset = (pIdx - 1.5) * 4;
+                piece.style.top = (top + offset) + '%';
+                piece.style.left = (left + offset) + '%';
+                shadow.style.top = (shadowTop + offset) + '%';
+                shadow.style.left = (left + offset) + '%';
             }
         }
+        if (gameState.winner === p.side) piece.classList.add('winner');
+        else piece.classList.remove('winner');
     });
 
     // Interaction
-    if (currentTurn === mySide && gameState.phase === 'ROLL') {
+    const canMove = (currentTurn === mySide || (mySide === 'CONTROLLER' && !isBotSide(currentTurn)));
+
+    if (canMove && gameState.phase === 'ROLL') {
         const diceContainer = document.getElementById('shared-dice');
         if (diceContainer) {
             diceContainer.classList.add('active');
-            diceContainer.onclick = () => rollDice();
+            diceContainer.onclick = () => {
+                diceContainer.classList.remove('active');
+                rollDice();
+            };
         }
-    } else if (currentTurn === mySide && gameState.phase === 'MOVE') {
-        // Auto-move after 1s
+    } else if (canMove && gameState.phase === 'MOVE') {
         setTimeout(() => {
-            if (currentTurn === mySide && gameState.phase === 'MOVE') {
-                makeMove(0); // Index doesn't matter for SL
+            if (currentTurn === gameState.turn && gameState.phase === 'MOVE') {
+                makeMove(0);
             }
-        }, 1000);
+        }, 800);
     }
+}
+
+function isBotSide(side) {
+    if (!side) return false;
+    const players = socket.lastState ? socket.lastState.players : {};
+    return Object.values(players).some(p => p.side === side && p.is_bot);
 }
 
 function renderDiceFace(val, container) {

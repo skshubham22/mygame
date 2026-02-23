@@ -362,6 +362,34 @@ class GameConsumer(AsyncWebsocketConsumer):
             taken = [p['side'] for p in players.values()]
             available = [c for c in colors if c not in taken]
             side = available[0] if available else 'SPECTATOR'
+            
+            if room.mode == 'COMPUTER':
+                # Similar logic to Ludo
+                is_user_active = any(not p.get('is_bot') for p in players.values())
+                if not is_user_active:
+                    side = 'RED'
+                    to_remove = [k for k, p in players.items() if p['side'] == 'RED' and not p.get('is_bot')]
+                    for k in to_remove: del players[k]
+                    players[player_id] = {'side': side, 'name': player_name, 'pos': 0, 'is_bot': False}
+                    
+                    bot_colors = colors[1:room.player_count]
+                    for b_color in bot_colors:
+                        players[f'bot_{b_color}'] = {'side': b_color, 'name': 'Computer', 'pos': 0, 'is_bot': True}
+                    room.game_state = state
+                    room.save()
+                    return side
+                else:
+                    return players.get(player_id, {}).get('side', 'SPECTATOR')
+
+            elif room.mode == 'LOCAL':
+                if not players:
+                    for c in colors[:room.player_count]:
+                        players[f'local_{c}'] = {'side': c, 'name': f'Player {c}', 'pos': 0, 'is_bot': False, 'is_local': True}
+                    players[player_id] = {'side': 'CONTROLLER', 'name': player_name}
+                room.game_state = state
+                room.save()
+                return 'CONTROLLER'
+
             players[player_id] = {
                 'side': side,
                 'name': player_name,
@@ -683,7 +711,10 @@ class GameConsumer(AsyncWebsocketConsumer):
             if p['side'] == state['turn'] and p.get('is_bot'):
                 # Trigger Bot
                 import asyncio
-                asyncio.create_task(self.run_bot_turn(state['turn']))
+                if state.get('game_type') == 'SNAKES_AND_LADDERS':
+                    asyncio.create_task(self.run_bot_turn_sl(state['turn']))
+                else:
+                    asyncio.create_task(self.run_bot_turn(state['turn']))
                 break
 
     async def run_bot_turn(self, bot_color):
@@ -850,7 +881,37 @@ class GameConsumer(AsyncWebsocketConsumer):
              state['phase'] = 'ROLL' # Another turn for 6
              return
 
-        idx = active_sides.index(state['turn'])
         state['turn'] = active_sides[(idx + 1) % len(active_sides)]
         state['phase'] = 'ROLL'
         state['dice_value'] = 0
+
+    async def run_bot_turn_sl(self, bot_color):
+        import asyncio
+        import random
+        await asyncio.sleep(1.5)
+        
+        dice_value = random.randint(1, 6)
+        
+        room = await database_sync_to_async(Room.objects.get)(code=self.room_code)
+        state = room.game_state
+        if state['turn'] != bot_color: return
+        
+        state['dice_value'] = dice_value
+        state['phase'] = 'MOVE'
+        await database_sync_to_async(room.save)()
+        
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {'type': 'game_update', 'game_state': state}
+        )
+        
+        await asyncio.sleep(1)
+        await self.update_game_state(0, bot_color)
+        
+        # Fresh state for chaining
+        room = await database_sync_to_async(Room.objects.get)(code=self.room_code)
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {'type': 'game_update', 'game_state': room.game_state}
+        )
+        await self.trigger_bot_if_needed()

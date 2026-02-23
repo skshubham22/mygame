@@ -39,7 +39,7 @@
                 <input type="hidden" name="game_type" id="game-type-input" value="LUDO">
             </div>
 
-            <div id="ludo-options" style="display: none; margin-bottom: 2rem;">
+            <div id="game-options" style="display: none; margin-bottom: 2rem;">
                 <h4 style="color: var(--text-dim); margin-bottom: 1rem;">Game Mode</h4>
                 <div class="mode-selection">
                     <label class="mode-option">
@@ -81,12 +81,11 @@
             <script>
                 function selectGame(type) {
                     document.getElementById('game-type-input').value = type;
-                    // Update UI to show selected (add active class logc if needed)
-                    // Show options if Ludo
-                    if (type === 'LUDO') {
-                        document.getElementById('ludo-options').style.display = 'block';
+                    // Show options if Ludo or Snakes & Ladders
+                    if (type === 'LUDO' || type === 'SNAKES_AND_LADDERS') {
+                        document.getElementById('game-options').style.display = 'block';
                     } else {
-                        document.getElementById('ludo-options').style.display = 'none';
+                        document.getElementById('game-options').style.display = 'none';
                     }
                 }
                 // Default
@@ -161,11 +160,11 @@
                 });
 
                 // Show/Hide Options
-                const ludoOpts = document.getElementById('ludo-options');
-                if (type === 'LUDO') {
-                    ludoOpts.style.display = 'block';
+                const opts = document.getElementById('game-options');
+                if (type === 'LUDO' || type === 'SNAKES_AND_LADDERS') {
+                    opts.style.display = 'block';
                 } else {
-                    ludoOpts.style.display = 'none';
+                    opts.style.display = 'none';
                 }
             }
         </script>
