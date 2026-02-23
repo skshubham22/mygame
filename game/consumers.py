@@ -1,7 +1,7 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
-from .models import Room
+from .models import Room, ChatLog
 
 class GameConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -161,6 +161,9 @@ class GameConsumer(AsyncWebsocketConsumer):
             }
         )
 
+        # Save to database
+        await self.save_chat_message(sender, message)
+
         # AI Agent Trigger
         if message and message.lower().startswith('@ai'):
              import asyncio
@@ -214,6 +217,8 @@ class GameConsumer(AsyncWebsocketConsumer):
                         'sender': sender_name
                     }
                 )
+                # Save AI response to database
+                await self.save_chat_message(sender_name, response_msg)
         except Exception as e:
             print(f"AI Error: {e}")
             await self.channel_layer.group_send(
@@ -252,6 +257,19 @@ class GameConsumer(AsyncWebsocketConsumer):
     def get_game_state(self):
         room = Room.objects.get(code=self.room_code)
         return room.game_state
+
+    @database_sync_to_async
+    def save_chat_message(self, sender, message):
+        try:
+            room = Room.objects.get(code=self.room_code)
+            ChatLog.objects.create(
+                room=room,
+                sender=sender,
+                message=message
+            )
+            print(f"DEBUG: Chat saved: {sender}: {message[:20]}")
+        except Exception as e:
+            print(f"DEBUG: Error saving chat: {e}")
 
     @database_sync_to_async
     def assign_player_side(self):

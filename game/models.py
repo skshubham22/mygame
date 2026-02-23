@@ -56,3 +56,12 @@ class Room(models.Model):
     def __str__(self):
         return f"{self.game_type} - {self.code}"
 
+
+class ChatLog(models.Model):
+    room = models.ForeignKey(Room, on_delete=models.CASCADE, related_name='chat_logs')
+    sender = models.CharField(max_length=100)
+    message = models.TextField()
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"[{self.timestamp}] {self.sender}: {self.message[:50]}"
