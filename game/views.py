@@ -1,3 +1,4 @@
+from django.shortcuts import render, redirect
 from .models import Room, ChatLog
 from django.http import HttpResponse
 
