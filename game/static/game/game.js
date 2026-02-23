@@ -341,6 +341,27 @@ function renderSnakesAndLadders(gameState) {
         boardDiv.innerHTML = '';
         boardDiv.className = 'board snakes_and_ladders';
 
+        // Initialize SVG Overlay
+        let svg = document.getElementById('sl-svg-overlay');
+        if (!svg) {
+            svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.id = 'sl-svg-overlay';
+            svg.setAttribute('viewBox', '0 0 100 100');
+            svg.setAttribute('preserveAspectRatio', 'none');
+
+            // Defs for gradients
+            svg.innerHTML = `
+                <defs>
+                    <linearGradient id="snakeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" style="stop-color:#1b5e20;stop-opacity:1" />
+                        <stop offset="50%" style="stop-color:#4caf50;stop-opacity:1" />
+                        <stop offset="100%" style="stop-color:#1b5e20;stop-opacity:1" />
+                    </linearGradient>
+                </defs>
+            `;
+            boardDiv.appendChild(svg);
+        }
+
         // Ladders: 4->14, 9->31, 20->38, 28->84, 40->59, 51->67, 63->81, 71->91
         // Snakes: 17->7, 54->34, 62->19, 64->60, 87->24, 93->73, 95->75, 99->78
         const ladders = [4, 9, 20, 28, 40, 51, 63, 71];
@@ -370,6 +391,9 @@ function renderSnakesAndLadders(gameState) {
                 for (let c = 9; c >= 0; c--) createSLCell(r, c);
             }
         }
+
+        // DRAW SVG ASSETS after grid is built
+        setTimeout(drawSLAssets, 100);
     }
 
     function createSLCell(r, c) {
@@ -511,6 +535,69 @@ function isBotSide(side) {
     if (!side) return false;
     const players = socket.lastState ? socket.lastState.players : {};
     return Object.values(players).some(p => p.side === side && p.is_bot);
+}
+
+function drawSLAssets() {
+    const svg = document.getElementById('sl-svg-overlay');
+    if (!svg) return;
+
+    // Clear previous paths (but keep defs)
+    const paths = svg.querySelectorAll('path');
+    paths.forEach(p => p.remove());
+
+    const ladders = {
+        2: 38, 4: 14, 8: 31, 21: 42, 28: 84, 36: 44, 51: 67, 71: 91, 80: 100
+    };
+    const snakes = {
+        16: 6, 47: 26, 49: 11, 56: 53, 62: 19, 64: 60, 87: 24, 93: 73, 95: 75, 98: 78
+    };
+
+    // Helper to get center of cell in SVG coords (0-100)
+    function getCellSVGCoords(val) {
+        const cell = document.getElementById(`sl-cell-${val}`);
+        if (!cell) return null;
+        const x = (cell.offsetLeft + cell.offsetWidth / 2) / boardDiv.offsetWidth * 100;
+        const y = (cell.offsetTop + cell.offsetHeight / 2) / boardDiv.offsetHeight * 100;
+        return { x, y };
+    }
+
+    // Draw Ladders
+    Object.entries(ladders).forEach(([start, end]) => {
+        const p1 = getCellSVGCoords(start);
+        const p2 = getCellSVGCoords(end);
+        if (p1 && p2) {
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("d", `M ${p1.x} ${p1.y} L ${p2.x} ${p2.y}`);
+            path.classList.add("sl-path-ladder");
+            svg.appendChild(path);
+        }
+    });
+
+    // Draw Snakes (Curved Bezier)
+    Object.entries(snakes).forEach(([start, end]) => {
+        const p1 = getCellSVGCoords(start); // Head
+        const p2 = getCellSVGCoords(end);   // Tail
+        if (p1 && p2) {
+            // Calculate control points for a "looping" curve
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+
+            // Perpendicular vector for curving
+            const nx = -dy / dist * 12;
+            const ny = dx / dist * 12;
+
+            const cp1x = p1.x + dx * 0.3 + nx;
+            const cp1y = p1.y + dy * 0.3 + ny;
+            const cp2x = p1.x + dx * 0.7 - nx;
+            const cp2y = p1.y + dy * 0.7 - ny;
+
+            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            path.setAttribute("d", `M ${p1.x} ${p1.y} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`);
+            path.classList.add("sl-path-snake");
+            svg.appendChild(path);
+        }
+    });
 }
 
 function renderDiceFace(val, container) {
