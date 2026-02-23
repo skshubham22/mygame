@@ -1,5 +1,5 @@
-from django.shortcuts import render, redirect
-from .models import Room
+from .models import Room, ChatLog
+from django.http import HttpResponse
 
 def index(request):
     if not request.session.session_key:
@@ -44,3 +44,15 @@ def room(request, room_code):
         })
     except Room.DoesNotExist:
         return redirect('index')
+
+def debug_save_chat(request):
+    room = Room.objects.first()
+    if not room:
+        return HttpResponse("No rooms exist. Create a game first.")
+    
+    log = ChatLog.objects.create(
+        room=room,
+        sender="DEBUG_TEST",
+        message="Manual test message"
+    )
+    return HttpResponse(f"Saved: {log}")
