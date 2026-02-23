@@ -363,8 +363,10 @@ function renderSnakesAndLadders(gameState) {
         for (let r = 9; r >= 0; r--) {
             const isRowEven = r % 2 === 0;
             if (isRowEven) {
+                // Row 8, 6, 4, 2, 0: Left to Right
                 for (let c = 0; c < 10; c++) createSLCell(r, c);
             } else {
+                // Row 9, 7, 5, 3, 1: Right to Left
                 for (let c = 9; c >= 0; c--) createSLCell(r, c);
             }
         }
@@ -373,7 +375,12 @@ function renderSnakesAndLadders(gameState) {
     function createSLCell(r, c) {
         const val = r * 10 + c + 1;
         const cell = document.createElement('div');
-        cell.className = `sl-cell ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
+
+        // Accurate Checkerboard Logic based on visual grid
+        const vr = 9 - r; // Visual row from top (0-9)
+        const vc = (r % 2 === 0) ? c : 9 - c; // Visual col from left (0-9)
+        cell.className = `sl-cell ${(vr + vc) % 2 === 0 ? 'light' : 'dark'}`;
+
         if (val === 100) cell.classList.add('finish');
 
         const ladders = [4, 9, 20, 28, 40, 51, 63, 71];
@@ -421,9 +428,9 @@ function renderSnakesAndLadders(gameState) {
             const cell = document.getElementById(`sl-cell-${pos}`);
             if (cell) {
                 // Adjust for 3D pawn (base at center)
-                const top = ((cell.offsetTop + cell.offsetHeight / 2 - 55) / boardDiv.offsetHeight) * 100;
+                const top = ((cell.offsetTop + cell.offsetHeight / 2 - 58) / boardDiv.offsetHeight) * 100;
                 const left = ((cell.offsetLeft + cell.offsetWidth / 2 - 21) / boardDiv.offsetWidth) * 100;
-                const shadowTop = ((cell.offsetTop + cell.offsetHeight / 2 + 5) / boardDiv.offsetHeight) * 100;
+                const shadowTop = ((cell.offsetTop + cell.offsetHeight / 2 + 10) / boardDiv.offsetHeight) * 100;
 
                 const offset = (pIdx - 1.5) * 4;
                 piece.style.top = (top + offset) + '%';
@@ -450,7 +457,8 @@ function renderSnakesAndLadders(gameState) {
         }
     } else if (canMove && gameState.phase === 'MOVE') {
         setTimeout(() => {
-            if (currentTurn === gameState.turn && gameState.phase === 'MOVE') {
+            // Re-fetch state to be sure
+            if (socket.lastState && socket.lastState.turn === currentTurn && socket.lastState.phase === 'MOVE') {
                 makeMove(0);
             }
         }, 800);
