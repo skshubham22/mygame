@@ -491,12 +491,15 @@ async function animateSLPath(player, piece, shadow, pIdx, state) {
     // Step by step move
     for (let pos = from + 1; pos <= to; pos++) {
         await new Promise(r => setTimeout(r, 300));
+        playSFX('move');
         updateSLPieceToCell(pos, piece, shadow, pIdx);
     }
 
     // Handle Snake/Ladder
     if (final) {
+        const isSnake = final < to;
         await new Promise(r => setTimeout(r, 600));
+        playSFX(isSnake ? 'snake' : 'ladder');
         updateSLPieceToCell(final, piece, shadow, pIdx);
     }
 
@@ -792,6 +795,7 @@ function rollDice() {
         }, 100);
     }
 
+    playSFX('dice');
     socket.send(JSON.stringify({
         'type': 'roll_dice',
         'player': mySide
@@ -1029,13 +1033,74 @@ function buildLudoBoard8() {
     boardDiv.appendChild(container);
 }
 
+// --- AUDIO SYSTEM ---
+let musicEnabled = true;
+let sfxEnabled = true;
+
+function toggleMusic() {
+    musicEnabled = !musicEnabled;
+    const bgm = document.getElementById('bgm');
+    const btn = document.getElementById('music-toggle');
+    if (musicEnabled) {
+        bgm.play().catch(e => console.log("Auto-play blocked"));
+        btn.innerText = "🎵 ON";
+    } else {
+        bgm.pause();
+        btn.innerText = "🎵 OFF";
+    }
+}
+
+function toggleSFX() {
+    sfxEnabled = !sfxEnabled;
+    const btn = document.getElementById('sfx-toggle');
+    btn.innerText = sfxEnabled ? "🔊 ON" : "🔊 OFF";
+}
+
+function playSFX(id) {
+    if (!sfxEnabled) return;
+    const sfx = document.getElementById(`sfx-${id}`);
+    if (sfx) {
+        sfx.currentTime = 0;
+        sfx.play().catch(e => console.log("SFX blocked"));
+    }
+}
+
+// --- CONFETTI SYSTEM ---
+function fireConfetti() {
+    const container = document.getElementById('confetti-container');
+    if (!container) return;
+
+    for (let i = 0; i < 150; i++) {
+        const c = document.createElement('div');
+        c.style.cssText = `
+            position: absolute; width: 10px; height: 10px;
+            background: hsl(${Math.random() * 360}, 100%, 50%);
+            left: ${Math.random() * 100}%; top: -20px;
+            border-radius: ${Math.random() > 0.5 ? '50%' : '0'};
+            transform: rotate(${Math.random() * 360}deg);
+            z-index: 9999;
+        `;
+        container.appendChild(c);
+
+        const duration = 2000 + Math.random() * 3000;
+        const animation = c.animate([
+            { transform: `translate(0, 0) rotate(0deg)`, opacity: 1 },
+            { transform: `translate(${(Math.random() - 0.5) * 200}px, ${window.innerHeight}px) rotate(${Math.random() * 1000}deg)`, opacity: 0 }
+        ], { duration, easing: 'cubic-bezier(0, .9, .57, 1)' });
+
+        animation.onfinish = () => c.remove();
+    }
+}
+
 function checkWinnerDisplay(gameState) {
     const modal = document.getElementById('result-modal');
     if (gameState.winner) {
+        playSFX('win');
+        fireConfetti();
         modal.style.display = 'block';
         const msg = document.getElementById('result-message');
         const title = document.getElementById('result-title');
-        title.innerText = "Game Over!";
+        title.innerText = "🎉 CHAMPION! 🎉";
 
         // Find winner name
         let winnerName = gameState.winner;
