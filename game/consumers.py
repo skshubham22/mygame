@@ -357,44 +357,6 @@ class GameConsumer(AsyncWebsocketConsumer):
                 'is_bot': False
             }
         
-        elif room.game_type == 'SNAKES_AND_LADDERS':
-            colors = ['RED', 'GREEN', 'YELLOW', 'BLUE']
-            taken = [p['side'] for p in players.values()]
-            available = [c for c in colors if c not in taken]
-            side = available[0] if available else 'SPECTATOR'
-            
-            if room.mode == 'COMPUTER':
-                # Similar logic to Ludo
-                is_user_active = any(not p.get('is_bot') for p in players.values())
-                if not is_user_active:
-                    side = 'RED'
-                    to_remove = [k for k, p in players.items() if p['side'] == 'RED' and not p.get('is_bot')]
-                    for k in to_remove: del players[k]
-                    players[player_id] = {'side': side, 'name': player_name, 'pos': 0, 'is_bot': False}
-                    
-                    bot_colors = colors[1:room.player_count]
-                    for b_color in bot_colors:
-                        players[f'bot_{b_color}'] = {'side': b_color, 'name': 'Computer', 'pos': 0, 'is_bot': True}
-                    room.game_state = state
-                    room.save()
-                    return side
-                else:
-                    return players.get(player_id, {}).get('side', 'SPECTATOR')
-
-            elif room.mode == 'LOCAL':
-                if not players:
-                    for c in colors[:room.player_count]:
-                        players[f'local_{c}'] = {'side': c, 'name': f'Player {c}', 'pos': 0, 'is_bot': False, 'is_local': True}
-                    players[player_id] = {'side': 'CONTROLLER', 'name': player_name}
-                room.game_state = state
-                room.save()
-                return 'CONTROLLER'
-
-            players[player_id] = {
-                'side': side,
-                'name': player_name,
-                'pos': 0, # 0 to 100
-            }
         
         room.game_state = state
         room.save()
@@ -479,55 +441,6 @@ class GameConsumer(AsyncWebsocketConsumer):
             room.save()
             return True, None
 
-        elif room.game_type == 'SNAKES_AND_LADDERS':
-            if state['turn'] != player or state.get('phase') != 'MOVE':
-                return False, "Not your turn or wait for roll!"
-            
-            dice_val = state['dice_value']
-            
-            # Find player
-            p_data = None
-            for p in state['players'].values():
-                if p['side'] == player:
-                    p_data = p
-                    break
-            
-            if not p_data: return False, "Player data not found"
-            
-            old_pos = p_data['pos']
-            if old_pos + dice_val > 100:
-                # Can't move, just next turn
-                self.next_turn_sl(state)
-            else:
-                new_pos = old_pos + dice_val
-                
-                # Professional Classic 10x10 Map
-                sl_map = {
-                    # Ladders
-                    2: 38, 4: 14, 8: 31, 21: 42, 28: 84, 36: 44, 51: 67, 71: 91, 80: 100,
-                    # Snakes
-                    16: 6, 47: 26, 49: 11, 56: 53, 62: 19, 64: 60, 87: 24, 93: 73, 95: 75, 98: 78
-                }
-                
-                new_pos = old_pos + dice_val
-                state['animate_from'] = old_pos
-                state['animate_to'] = new_pos
-                p_data['pos'] = new_pos
-                
-                if new_pos in sl_map:
-                    state['animate_final'] = sl_map[new_pos]
-                    p_data['pos'] = sl_map[new_pos]
-                else:
-                    state['animate_final'] = None
-                
-                if p_data['pos'] == 100:
-                    state['winner'] = player
-                
-                self.next_turn_sl(state)
-            
-            room.game_state = state
-            room.save()
-            return True, None
         return False, "Unknown game type"
 
     def check_collision(self, state, player_color, piece_pos):
@@ -605,13 +518,6 @@ class GameConsumer(AsyncWebsocketConsumer):
                  # We DO NOT spawn task here. We rely on the caller (roll_dice) to check state and spawn task.
                  # purely sync DB update here.
             
-            room.save()
-            return True
-        elif room.game_type == 'SNAKES_AND_LADDERS':
-            if state['turn'] != player or state.get('phase', 'ROLL') != 'ROLL':
-                return False
-            state['dice_value'] = value
-            state['phase'] = 'MOVE'
             room.save()
             return True
         return False
@@ -717,9 +623,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             if p['side'] == state['turn'] and p.get('is_bot'):
                 # Trigger Bot
                 import asyncio
-                if state.get('game_type') == 'SNAKES_AND_LADDERS':
-                    asyncio.create_task(self.run_bot_turn_sl(state['turn']))
-                else:
+                if state.get('game_type') != 'SNAKES_AND_LADDERS':
                     asyncio.create_task(self.run_bot_turn(state['turn']))
                 break
 
@@ -859,12 +763,6 @@ class GameConsumer(AsyncWebsocketConsumer):
             state['winner'] = None
             state['dice_value'] = 0
             state['turn'] = 'RED'
-        elif room.game_type == 'SNAKES_AND_LADDERS':
-            state['winner'] = None
-            state['dice_value'] = 0
-            state['turn'] = 'RED'
-            for p in state['players'].values():
-                p['pos'] = 0
         room.save()
         return True
 
@@ -908,33 +806,3 @@ class GameConsumer(AsyncWebsocketConsumer):
         state['phase'] = 'ROLL'
         state['dice_value'] = 0
 
-    async def run_bot_turn_sl(self, bot_color):
-        import asyncio
-        import random
-        await asyncio.sleep(1.5)
-        
-        dice_value = random.randint(1, 6)
-        
-        room = await database_sync_to_async(Room.objects.get)(code=self.room_code)
-        state = room.game_state
-        if state['turn'] != bot_color: return
-        
-        state['dice_value'] = dice_value
-        state['phase'] = 'MOVE'
-        await database_sync_to_async(room.save)()
-        
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {'type': 'game_update', 'game_state': state}
-        )
-        
-        await asyncio.sleep(1)
-        await self.update_game_state(0, bot_color)
-        
-        # Fresh state for chaining
-        room = await database_sync_to_async(Room.objects.get)(code=self.room_code)
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {'type': 'game_update', 'game_state': room.game_state}
-        )
-        await self.trigger_bot_if_needed()
