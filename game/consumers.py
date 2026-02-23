@@ -762,6 +762,10 @@ class GameConsumer(AsyncWebsocketConsumer):
         room = Room.objects.get(code=self.room_code)
         state = room.game_state
         if room.game_type == 'TIC_TAC_TOE':
+            # Guard: Only toggle turn if the game was actually over
+            if not state.get('game_over', False) and state.get('board') == [None] * 9:
+                return True
+
             state['board'] = [None] * 9
             state['winner'] = None
             state['game_over'] = False
