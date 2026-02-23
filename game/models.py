@@ -6,6 +6,7 @@ class Room(models.Model):
     GAME_TYPES = (
         ('TIC_TAC_TOE', 'Tic Tac Toe'),
         ('LUDO', 'Ludo'),
+        ('SNAKES_AND_LADDERS', 'Snakes and Ladders'),
     )
     
     code = models.CharField(max_length=8, unique=True, blank=True)
@@ -42,6 +43,14 @@ class Room(models.Model):
                     'winner': None,
                     'consecutive_sixes': 0,
                     'last_moved_piece': None
+                }
+            elif self.game_type == 'SNAKES_AND_LADDERS':
+                self.game_state = {
+                    'players': {}, # session_key: {side: 'RED', pos: 0, name: ''}
+                    'turn': 'RED',
+                    'dice_value': 0,
+                    'winner': None,
+                    'phase': 'ROLL' # ROLL or MOVE
                 }
         
         super().save(*args, **kwargs)

@@ -143,6 +143,8 @@ function renderBoard(gameState) {
             renderTicTacToe(gameState.board, winner);
         } else if (gameType === 'LUDO') {
             renderLudo(gameState);
+        } else if (gameType === 'SNAKES_AND_LADDERS') {
+            renderSnakesAndLadders(gameState);
         }
     } catch (e) {
         console.error("Render Error:", e);
@@ -330,6 +332,116 @@ function renderLudo(gameState) {
     // Toast for Auto-Pass
     if (gameState.phase === 'AUTO_PASS') {
         showToast("No Moves! Passing Turn...");
+    }
+}
+
+function renderSnakesAndLadders(gameState) {
+    if (boardDiv.children.length === 0) {
+        boardDiv.innerHTML = '';
+        boardDiv.className = 'board snakes_and_ladders';
+
+        // Ladders: 4->14, 9->31, 20->38, 28->84, 40->59, 51->67, 63->81, 71->91
+        // Snakes: 17->7, 54->34, 62->19, 64->60, 87->24, 93->73, 95->75, 99->78
+        const ladders = [4, 9, 20, 28, 40, 51, 63, 71];
+        const snakes = [17, 54, 62, 64, 87, 93, 95, 99];
+
+        for (let i = 100; i >= 1; i--) {
+            // Row by row, but zig-zag
+            // Row 10 (100-91), Row 9 (81-90), Row 8 (80-71)...
+            const row = Math.floor((i - 1) / 10);
+            let displayVal = i;
+
+            // Zig-zag logic
+            // (Wait, simpler to just display i and let CSS Grid handle positioning if we order them carefully)
+            // But 100 is top-left, 1 is bottom-left? Standard SL: 1 is bottom-left.
+            // Let's build the grid from bottom up.
+        }
+
+        // RE-BUILD LOOP for standard view (1 at bottom left)
+        boardDiv.innerHTML = '';
+        for (let r = 9; r >= 0; r--) {
+            const isRowEven = r % 2 === 0;
+            if (isRowEven) {
+                for (let c = 0; c < 10; c++) createSLCell(r, c);
+            } else {
+                for (let c = 9; c >= 0; c--) createSLCell(r, c);
+            }
+        }
+    }
+
+    function createSLCell(r, c) {
+        const val = r * 10 + c + 1;
+        const cell = document.createElement('div');
+        cell.className = `sl-cell ${(r + c) % 2 === 0 ? 'light' : 'dark'}`;
+        if (val === 100) cell.classList.add('finish');
+
+        const ladders = [4, 9, 20, 28, 40, 51, 63, 71];
+        const snakes = [17, 54, 62, 64, 87, 93, 95, 99];
+
+        if (ladders.includes(val)) cell.classList.add('ladder-start');
+        if (snakes.includes(val)) cell.classList.add('snake-head');
+
+        cell.innerText = val;
+        cell.dataset.val = val;
+        cell.id = `sl-cell-${val}`;
+        boardDiv.appendChild(cell);
+    }
+
+    // Render Pieces
+    const players = gameState.players || {};
+    Object.values(players).forEach(p => {
+        const color = p.side.toLowerCase();
+        if (color === 'spectator') return;
+
+        let piece = document.getElementById(`sl-piece-${color}`);
+        if (!piece) {
+            piece = document.createElement('div');
+            piece.id = `sl-piece-${color}`;
+            piece.className = `sl-piece ${color}`;
+            boardDiv.appendChild(piece);
+        }
+
+        const pos = p.pos || 0;
+        if (pos === 0) {
+            // Off-board start
+            piece.style.opacity = '0.3';
+            piece.style.bottom = '-30px';
+            piece.style.left = '45%';
+        } else {
+            piece.style.opacity = '1';
+            const cell = document.getElementById(`sl-cell-${pos}`);
+            if (cell) {
+                const rect = cell.getBoundingClientRect();
+                const boardRect = boardDiv.getBoundingClientRect();
+
+                // Position relative to board
+                const top = ((cell.offsetTop + cell.offsetHeight / 2 - 12.5) / boardDiv.offsetHeight) * 100;
+                const left = ((cell.offsetLeft + cell.offsetWidth / 2 - 12.5) / boardDiv.offsetWidth) * 100;
+
+                // Offset pieces slightly if they are on same cell
+                const sameCellCount = Object.values(players).filter(other => other.pos === pos && other.side !== p.side).length;
+                const pIdx = Object.values(players).indexOf(p);
+
+                piece.style.top = (top + (pIdx * 2)) + '%';
+                piece.style.left = (left + (pIdx * 2)) + '%';
+            }
+        }
+    });
+
+    // Interaction
+    if (currentTurn === mySide && gameState.phase === 'ROLL') {
+        const diceContainer = document.getElementById('shared-dice');
+        if (diceContainer) {
+            diceContainer.classList.add('active');
+            diceContainer.onclick = () => rollDice();
+        }
+    } else if (currentTurn === mySide && gameState.phase === 'MOVE') {
+        // Auto-move after 1s
+        setTimeout(() => {
+            if (currentTurn === mySide && gameState.phase === 'MOVE') {
+                makeMove(0); // Index doesn't matter for SL
+            }
+        }, 1000);
     }
 }
 
@@ -823,7 +935,16 @@ const stickerLibrary = [
     { tags: 'meme grumpy cat', url: 'https://i.imgflip.com/gk2w.jpg' },
     { tags: 'meme spider-man pointing', url: 'https://i.imgflip.com/1tk9yc.jpg' },
     { tags: 'meme doge wow', url: 'https://i.imgflip.com/4t0m5.jpg' },
-    { tags: 'meme hide the pain harold', url: 'https://i.imgflip.com/26am.jpg' }
+    { tags: 'meme hide the pain harold', url: 'https://i.imgflip.com/26am.jpg' },
+    { tags: 'meme this is fine dog fire', url: 'https://i.imgflip.com/138128.jpg' },
+    { tags: 'meme mocking spongebob', url: 'https://i.imgflip.com/1ot9z0.jpg' },
+    { tags: 'meme surprised pikachu', url: 'https://i.imgflip.com/2k6th9.jpg' },
+    { tags: 'meme change my mind', url: 'https://i.imgflip.com/24y43o.jpg' },
+    { tags: 'meme disaster girl fire', url: 'https://i.imgflip.com/24y43o.jpg' },
+    { tags: 'meme bernie sanders once again asking', url: 'https://i.imgflip.com/3si4bd.jpg' },
+    { tags: 'meme anakin padme for the better right', url: 'https://i.imgflip.com/5c7v6w.jpg' },
+    { tags: 'meme two buttons choice', url: 'https://i.imgflip.com/1g8my4.jpg' },
+    { tags: 'meme roll safe tapping head', url: 'https://i.imgflip.com/1ub9db.jpg' }
 ];
 
 function toggleStickerPicker() {

@@ -357,6 +357,17 @@ class GameConsumer(AsyncWebsocketConsumer):
                 'is_bot': False
             }
         
+        elif room.game_type == 'SNAKES_AND_LADDERS':
+            colors = ['RED', 'GREEN', 'YELLOW', 'BLUE']
+            taken = [p['side'] for p in players.values()]
+            available = [c for c in colors if c not in taken]
+            side = available[0] if available else 'SPECTATOR'
+            players[player_id] = {
+                'side': side,
+                'name': player_name,
+                'pos': 0, # 0 to 100
+            }
+        
         room.game_state = state
         room.save()
         return side
@@ -439,6 +450,50 @@ class GameConsumer(AsyncWebsocketConsumer):
             room.game_state = state
             room.save()
             return True, None
+
+        elif room.game_type == 'SNAKES_AND_LADDERS':
+            if state['turn'] != player or state.get('phase') != 'MOVE':
+                return False, "Not your turn or wait for roll!"
+            
+            dice_val = state['dice_value']
+            
+            # Find player
+            p_data = None
+            for p in state['players'].values():
+                if p['side'] == player:
+                    p_data = p
+                    break
+            
+            if not p_data: return False, "Player data not found"
+            
+            old_pos = p_data['pos']
+            if old_pos + dice_val > 100:
+                # Can't move, just next turn
+                self.next_turn_sl(state)
+            else:
+                new_pos = old_pos + dice_val
+                
+                # Snakes and Ladders Map
+                # Ladders: 4->14, 9->31, 20->38, 28->84, 40->59, 51->67, 63->81, 71->91
+                # Snakes: 17->7, 54->34, 62->19, 64->60, 87->24, 93->73, 95->75, 99->78
+                sl_map = {
+                    4: 14, 9: 31, 20: 38, 28: 84, 40: 59, 51: 67, 63: 81, 71: 91, # Ladders
+                    17: 7, 54: 34, 62: 19, 64: 60, 87: 24, 93: 73, 95: 75, 99: 78 # Snakes
+                }
+                
+                if new_pos in sl_map:
+                    new_pos = sl_map[new_pos]
+                
+                p_data['pos'] = new_pos
+                
+                if new_pos == 100:
+                    state['winner'] = player
+                
+                self.next_turn_sl(state)
+            
+            room.game_state = state
+            room.save()
+            return True, None
         return False, "Unknown game type"
 
     def check_collision(self, state, player_color, piece_pos):
@@ -516,6 +571,13 @@ class GameConsumer(AsyncWebsocketConsumer):
                  # We DO NOT spawn task here. We rely on the caller (roll_dice) to check state and spawn task.
                  # purely sync DB update here.
             
+            room.save()
+            return True
+        elif room.game_type == 'SNAKES_AND_LADDERS':
+            if state['turn'] != player or state.get('phase', 'ROLL') != 'ROLL':
+                return False
+            state['dice_value'] = value
+            state['phase'] = 'MOVE'
             room.save()
             return True
         return False
@@ -760,6 +822,12 @@ class GameConsumer(AsyncWebsocketConsumer):
             state['winner'] = None
             state['dice_value'] = 0
             state['turn'] = 'RED'
+        elif room.game_type == 'SNAKES_AND_LADDERS':
+            state['winner'] = None
+            state['dice_value'] = 0
+            state['turn'] = 'RED'
+            for p in state['players'].values():
+                p['pos'] = 0
         room.save()
         return True
 
@@ -770,3 +838,19 @@ class GameConsumer(AsyncWebsocketConsumer):
             (0, 4, 8), (2, 4, 6)
         ]
         return any(all(board[i] == player for i in condition) for condition in win_conditions)
+
+    def next_turn_sl(self, state):
+        colors = ['RED', 'GREEN', 'YELLOW', 'BLUE']
+        active_sides = [p['side'] for p in state['players'].values() if p['side'] in colors]
+        active_sides.sort(key=lambda x: colors.index(x))
+        
+        if not active_sides: return
+        
+        if state['dice_value'] == 6 and state['winner'] is None:
+             state['phase'] = 'ROLL' # Another turn for 6
+             return
+
+        idx = active_sides.index(state['turn'])
+        state['turn'] = active_sides[(idx + 1) % len(active_sides)]
+        state['phase'] = 'ROLL'
+        state['dice_value'] = 0

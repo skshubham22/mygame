@@ -1,0 +1,77 @@
+.board.snakes_and_ladders {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(10, 1fr);
+    aspect-ratio: 1/1;
+    background: #2d3436;
+    border: 5px solid #636e72;
+    border-radius: 10px;
+    padding: 0;
+    gap: 0;
+}
+
+.sl-cell {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: bold;
+    color: rgba(255, 255, 255, 0.3);
+    position: relative;
+    z-index: 1;
+}
+
+.sl-cell.light {
+    background: #353b48;
+}
+
+.sl-cell.dark {
+    background: #2f3640;
+}
+
+.sl-cell.ladder-start::after {
+    content: '🪜';
+    position: absolute;
+    font-size: 1.2rem;
+    opacity: 0.6;
+}
+
+.sl-cell.snake-head::after {
+    content: '🐍';
+    position: absolute;
+    font-size: 1.2rem;
+    opacity: 0.6;
+}
+
+.sl-cell.finish {
+    background: #ffd32a !important;
+    color: #000;
+}
+
+.sl-piece {
+    width: 25px;
+    height: 25px;
+    border-radius: 50%;
+    position: absolute;
+    z-index: 10;
+    transition: all 0.5s ease-in-out;
+    border: 2px solid #fff;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.sl-piece.red {
+    background: #ff4757;
+}
+
+.sl-piece.green {
+    background: #2ed573;
+}
+
+.sl-piece.yellow {
+    background: #eccc68;
+}
+
+.sl-piece.blue {
+    background: #1e90ff;
+}
