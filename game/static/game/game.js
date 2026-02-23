@@ -337,7 +337,7 @@ function renderLudo(gameState) {
 }
 
 function renderSnakesAndLadders(gameState) {
-    if (boardDiv.children.length === 0) {
+    if (boardDiv.children.length === 0 || !document.getElementById('sl-svg-overlay')) {
         boardDiv.innerHTML = '';
         boardDiv.className = 'board snakes_and_ladders';
 
@@ -379,8 +379,7 @@ function renderSnakesAndLadders(gameState) {
             // Let's build the grid from bottom up.
         }
 
-        // RE-BUILD LOOP for standard view (1 at bottom left)
-        boardDiv.innerHTML = '';
+        // Create cells
         for (let r = 9; r >= 0; r--) {
             const isRowEven = r % 2 === 0;
             if (isRowEven) {
