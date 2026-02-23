@@ -813,7 +813,17 @@ const stickerLibrary = [
     { tags: 'robot', url: '🤖' },
     { tags: 'alien', url: '👽' },
     { tags: 'cat funny', url: '😹' },
-    { tags: 'monkey', url: '🙈' }
+    { tags: 'monkey', url: '🙈' },
+    // Trending Memes
+    { tags: 'meme drake hotline bling', url: 'https://i.imgflip.com/1o00in.jpg' },
+    { tags: 'meme distracted boyfriend', url: 'https://i.imgflip.com/1otk96.jpg' },
+    { tags: 'meme woman yelling at cat', url: 'https://i.imgflip.com/30m1wi.jpg' },
+    { tags: 'meme think about it smart', url: 'https://i.imgflip.com/1ur9b0.jpg' },
+    { tags: 'meme success kid', url: 'https://i.imgflip.com/9ehk.jpg' },
+    { tags: 'meme grumpy cat', url: 'https://i.imgflip.com/gk2w.jpg' },
+    { tags: 'meme spider-man pointing', url: 'https://i.imgflip.com/1tk9yc.jpg' },
+    { tags: 'meme doge wow', url: 'https://i.imgflip.com/4t0m5.jpg' },
+    { tags: 'meme hide the pain harold', url: 'https://i.imgflip.com/26am.jpg' }
 ];
 
 function toggleStickerPicker() {
@@ -847,7 +857,14 @@ function filterStickers() {
         if (s.tags.includes(query) || query === '') {
             const el = document.createElement('div');
             el.className = 'sticker-item';
-            el.textContent = s.url;
+
+            // Render Image or Emoji
+            if (s.url.startsWith('http')) {
+                el.innerHTML = `<img src="${s.url}" style="width:100%; height:100%; object-fit:cover; border-radius:5px;" loading="lazy">`;
+            } else {
+                el.textContent = s.url;
+            }
+
             el.onclick = () => sendSticker(s.url);
             grid.appendChild(el);
         }
