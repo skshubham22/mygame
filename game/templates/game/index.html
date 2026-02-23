@@ -67,6 +67,28 @@
                         <span>4 Players</span>
                     </label>
                 </div>
+
+                <div id="color-options" style="margin-top: 1.5rem;">
+                    <h4 style="color: var(--text-dim); margin-bottom: 1rem;">Choose Your Color</h4>
+                    <div class="color-selection">
+                        <label class="color-option red">
+                            <input type="radio" name="preferred_color" value="RED" checked>
+                            <span></span>
+                        </label>
+                        <label class="color-option green">
+                            <input type="radio" name="preferred_color" value="GREEN">
+                            <span></span>
+                        </label>
+                        <label class="color-option yellow">
+                            <input type="radio" name="preferred_color" value="YELLOW">
+                            <span></span>
+                        </label>
+                        <label class="color-option blue">
+                            <input type="radio" name="preferred_color" value="BLUE">
+                            <span></span>
+                        </label>
+                    </div>
+                </div>
             </div>
 
             <div class="actions-buttons" style="margin-top: 2rem;">
@@ -118,6 +140,60 @@
                     color: var(--bg);
                     border-color: var(--primary);
                     box-shadow: 0 0 15px var(--primary-dim);
+                }
+
+                .color-selection {
+                    display: flex;
+                    justify-content: center;
+                    gap: 15px;
+                }
+
+                .color-option input {
+                    display: none;
+                }
+
+                .color-option span {
+                    display: block;
+                    width: 35px;
+                    height: 35px;
+                    border-radius: 50%;
+                    border: 3px solid rgba(255, 255, 255, 0.1);
+                    cursor: pointer;
+                    transition: all 0.3s;
+                    position: relative;
+                }
+
+                .color-option.red span {
+                    background: #ff7675;
+                }
+
+                .color-option.green span {
+                    background: #55efc4;
+                }
+
+                .color-option.yellow span {
+                    background: #ffeaa7;
+                }
+
+                .color-option.blue span {
+                    background: #74b9ff;
+                }
+
+                .color-option input:checked+span {
+                    border-color: white;
+                    transform: scale(1.2);
+                    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+                }
+
+                .color-option input:checked+span::after {
+                    content: '✓';
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                    color: white;
+                    font-weight: bold;
+                    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
                 }
             </style>
 

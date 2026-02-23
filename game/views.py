@@ -12,6 +12,9 @@ def index(request):
             request.session['player_name'] = player_name
             
         action = request.POST.get('action')
+        preferred_color = request.POST.get('preferred_color')
+        if preferred_color:
+            request.session['preferred_color'] = preferred_color
         
         if action == 'join':
             room_code = request.POST.get('room_code')

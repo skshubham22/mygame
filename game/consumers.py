@@ -197,12 +197,12 @@ class GameConsumer(AsyncWebsocketConsumer):
                 
                 elif "sticker" in cmd or "cat" in cmd:
                     if "cat" in cmd:
-                         # simplified: just use the image url pattern with a random cachebuster
-                         response_msg = f"https://cataas.com/cat?t={random.randint(1,1000)}"
+                         # Use CATAAS with a unique tag
+                         response_msg = f"https://cataas.com/cat/says/AI?t={random.randint(1,1000)}"
                     else:
-                        # Generic sticker from robohash
+                        # Stable picsum photos
                         seed = random.randint(1, 1000)
-                        response_msg = f"https://robohash.org/{seed}.png?set=set2&size=200x200"
+                        response_msg = f"https://picsum.photos/seed/{seed}/200/200"
                 
                 else:
                     response_msg = "I can send you a 'meme' or a 'sticker' (try '@ai meme' or '@ai sticker')"
@@ -241,11 +241,12 @@ class GameConsumer(AsyncWebsocketConsumer):
         results.append(f"https://robohash.org/{query}.png?set=set2&size=150x150")
         results.append(f"https://robohash.org/{query}.png?set=set1&size=150x150")
         
-        # LoremFlickr (Real Images) - use random lock to get different images
-        # Note: LoremFlickr might be slow, but it's free.
-        # Add timestamp to bypass cache
-        results.append(f"https://loremflickr.com/150/150/{query}?lock={random.randint(1,1000)}")
-        results.append(f"https://loremflickr.com/150/150/{query}?lock={random.randint(1,1000)}")
+        # Picsum (Stable Random Images)
+        results.append(f"https://picsum.photos/seed/{query}{random.randint(1,100)}/150/150")
+        results.append(f"https://picsum.photos/seed/{query}{random.randint(101,200)}/150/150")
+        
+        # Unsplash Source (now redirects to images.unsplash.com)
+        results.append(f"https://images.unsplash.com/photo-1518791841217-8f162f1e1131?auto=format&fit=crop&w=150&h=150&q=80&sig={random.randint(1,1000)}")
         
         # Send results back to requester ONLY (not broadcast)
         await self.send(text_data=json.dumps({
@@ -302,11 +303,15 @@ class GameConsumer(AsyncWebsocketConsumer):
             base_colors = ['RED', 'GREEN', 'YELLOW', 'BLUE', 'ORANGE', 'PURPLE', 'CYAN', 'PINK']
             colors = base_colors[:room.player_count] if room.player_count > 4 else base_colors[:4]
             
+            preferred_color = self.scope['session'].get('preferred_color')
+            
             if room.mode == 'COMPUTER':
                 is_user_active = any(not p.get('is_bot') for p in players.values())
                 if not is_user_active:
-                    side = 'RED'
-                    to_remove = [k for k, p in players.items() if p['side'] == 'RED' and not p.get('is_bot')]
+                    # Use preferred color if valid for the room, else RED
+                    side = preferred_color if preferred_color in colors else 'RED'
+                    
+                    to_remove = [k for k, p in players.items() if p['side'] == side and not p.get('is_bot')]
                     for k in to_remove: del players[k]
 
                     players[player_id] = {
@@ -315,7 +320,9 @@ class GameConsumer(AsyncWebsocketConsumer):
                     }
                     
                     count = room.player_count
-                    bot_colors = colors[1:count] 
+                    # Bot assignment
+                    bot_pool = [c for c in colors if c != side]
+                    bot_colors = bot_pool[:count-1] 
                     for b_color in bot_colors:
                         bot_key = f'bot_{b_color}'
                         if bot_key not in players:
@@ -347,8 +354,14 @@ class GameConsumer(AsyncWebsocketConsumer):
 
             # ONLINE (Default)
             taken = [p['side'] for p in players.values()]
-            available = [c for c in colors if c not in taken]
-            side = available[0] if available else 'SPECTATOR'
+            
+            # Priority: Preferred Color -> Available Colors
+            if preferred_color in colors and preferred_color not in taken:
+                side = preferred_color
+            else:
+                available = [c for c in colors if c not in taken]
+                side = available[0] if available else 'SPECTATOR'
+                
             players[player_id] = {
                 'side': side, 
                 'name': player_name, 
