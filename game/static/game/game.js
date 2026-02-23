@@ -881,24 +881,16 @@ const stickerLibrary = [
     { tags: 'cat funny', url: '😹' },
     { tags: 'monkey', url: '🙈' },
     // Trending Memes
-    { tags: 'meme drake hotline bling', url: 'https://i.imgflip.com/1o00in.jpg' },
-    { tags: 'meme distracted boyfriend', url: 'https://i.imgflip.com/1otk96.jpg' },
-    { tags: 'meme woman yelling at cat', url: 'https://i.imgflip.com/30m1wi.jpg' },
-    { tags: 'meme think about it smart', url: 'https://i.imgflip.com/1ur9b0.jpg' },
-    { tags: 'meme success kid', url: 'https://i.imgflip.com/9ehk.jpg' },
-    { tags: 'meme grumpy cat', url: 'https://i.imgflip.com/gk2w.jpg' },
-    { tags: 'meme spider-man pointing', url: 'https://i.imgflip.com/1tk9yc.jpg' },
-    { tags: 'meme doge wow', url: 'https://i.imgflip.com/4t0m5.jpg' },
-    { tags: 'meme hide the pain harold', url: 'https://i.imgflip.com/26am.jpg' },
-    { tags: 'meme this is fine dog fire', url: 'https://i.imgflip.com/138128.jpg' },
-    { tags: 'meme mocking spongebob', url: 'https://i.imgflip.com/1ot9z0.jpg' },
-    { tags: 'meme surprised pikachu', url: 'https://i.imgflip.com/2k6th9.jpg' },
-    { tags: 'meme change my mind', url: 'https://i.imgflip.com/24y43o.jpg' },
-    { tags: 'meme disaster girl fire', url: 'https://i.imgflip.com/24y43o.jpg' },
-    { tags: 'meme bernie sanders once again asking', url: 'https://i.imgflip.com/3si4bd.jpg' },
-    { tags: 'meme anakin padme for the better right', url: 'https://i.imgflip.com/5c7v6w.jpg' },
-    { tags: 'meme two buttons choice', url: 'https://i.imgflip.com/1g8my4.jpg' },
-    { tags: 'meme roll safe tapping head', url: 'https://i.imgflip.com/1ub9db.jpg' }
+    { tags: 'meme doge wow cute', url: 'https://images.unsplash.com/photo-1518717758536-85ae29035b6d?auto=format&fit=crop&w=150&h=150&q=80' },
+    { tags: 'meme sunglasses cool', url: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?auto=format&fit=crop&w=150&h=150&q=80' },
+    { tags: 'meme happy success kid', url: 'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?auto=format&fit=crop&w=150&h=150&q=80' },
+    { tags: 'meme thinking smart', url: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=150&h=150&q=80' },
+    { tags: 'meme distracted boyfriend', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&h=150&q=80' },
+    { tags: 'meme fire this is fine', url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=150&h=150&q=80' },
+    { tags: 'meme surprised pikachu face', url: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=150&h=150&q=80' },
+    { tags: 'meme gaming cards win', url: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=150&h=150&q=80' },
+    { tags: 'meme random fun', url: 'https://picsum.photos/seed/fun/150/150' },
+    { tags: 'meme classic vibe', url: 'https://picsum.photos/seed/classic/150/150' }
 ];
 
 function toggleStickerPicker() {
