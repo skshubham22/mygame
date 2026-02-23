@@ -10,14 +10,20 @@ django.setup()
 
 from django.contrib.auth.models import User
 
-user, created = User.objects.get_or_create(username='shubham', defaults={'email': 'shubham@example.com'})
-if created:
-    print("Created new superuser 'shubham'")
-else:
-    print("Found existing superuser 'shubham'")
-
-user.is_staff = True
-user.is_superuser = True
-user.set_password('admin123')
+user, created = User.objects.update_or_create(
+    username='admin',
+    defaults={
+        'email': 'admin@example.com',
+        'is_staff': True,
+        'is_superuser': True,
+    }
+)
+user.set_password('admin789')
 user.save()
-print("Password for 'shubham' has been set to 'admin123'")
+
+if created:
+    print("Created new superuser 'admin'")
+else:
+    print("Updated existing superuser 'admin'")
+
+print("Password for 'admin' has been set to 'admin789'")
