@@ -416,29 +416,23 @@ function renderSnakesAndLadders(gameState) {
             shadow.id = shadowId;
             shadow.className = `sl-piece-shadow`;
             boardDiv.appendChild(shadow);
-        }
 
-        const pos = p.pos || 0;
-        if (pos === 0) {
-            piece.style.display = 'none';
-            shadow.style.display = 'none';
-        } else {
-            piece.style.display = 'flex';
-            shadow.style.display = 'block';
-            const cell = document.getElementById(`sl-cell-${pos}`);
-            if (cell) {
-                // Adjust for 3D pawn (base at center)
-                const top = ((cell.offsetTop + cell.offsetHeight / 2 - 58) / boardDiv.offsetHeight) * 100;
-                const left = ((cell.offsetLeft + cell.offsetWidth / 2 - 21) / boardDiv.offsetWidth) * 100;
-                const shadowTop = ((cell.offsetTop + cell.offsetHeight / 2 + 10) / boardDiv.offsetHeight) * 100;
-
-                const offset = (pIdx - 1.5) * 4;
-                piece.style.top = (top + offset) + '%';
-                piece.style.left = (left + offset) + '%';
-                shadow.style.top = (shadowTop + offset) + '%';
-                shadow.style.left = (left + offset) + '%';
+            // Set initial pos invisible if at 0
+            if ((p.pos || 0) === 0) {
+                piece.style.display = 'none';
+                shadow.style.display = 'none';
             }
         }
+
+        // Trigger Path Animation if markers present
+        if (gameState.animate_from !== undefined && gameState.animate_to !== undefined && p.side === gameState.turn) {
+            if (!piece.isAnimating) {
+                animateSLPath(p, piece, shadow, pIdx, gameState);
+            }
+        } else {
+            updateSLPiecePosition(p, piece, shadow, pIdx, gameState);
+        }
+
         if (gameState.winner === p.side) piece.classList.add('winner');
         else piece.classList.remove('winner');
     });
@@ -462,6 +456,54 @@ function renderSnakesAndLadders(gameState) {
                 makeMove(0);
             }
         }, 800);
+    }
+}
+
+async function animateSLPath(player, piece, shadow, pIdx, state) {
+    piece.isAnimating = true;
+    const from = state.animate_from;
+    const to = state.animate_to;
+    const final = state.animate_final;
+
+    // Step by step move
+    for (let pos = from + 1; pos <= to; pos++) {
+        await new Promise(r => setTimeout(r, 300));
+        updateSLPieceToCell(pos, piece, shadow, pIdx);
+    }
+
+    // Handle Snake/Ladder
+    if (final) {
+        await new Promise(r => setTimeout(r, 600));
+        updateSLPieceToCell(final, piece, shadow, pIdx);
+    }
+
+    piece.isAnimating = false;
+}
+
+function updateSLPiecePosition(p, piece, shadow, pIdx, state) {
+    const pos = p.pos || 0;
+    if (pos === 0) {
+        piece.style.display = 'none';
+        shadow.style.display = 'none';
+    } else {
+        piece.style.display = 'flex';
+        shadow.style.display = 'block';
+        updateSLPieceToCell(pos, piece, shadow, pIdx);
+    }
+}
+
+function updateSLPieceToCell(pos, piece, shadow, pIdx) {
+    const cell = document.getElementById(`sl-cell-${pos}`);
+    if (cell) {
+        const top = ((cell.offsetTop + cell.offsetHeight / 2 - 58) / boardDiv.offsetHeight) * 100;
+        const left = ((cell.offsetLeft + cell.offsetWidth / 2 - 21) / boardDiv.offsetWidth) * 100;
+        const shadowTop = ((cell.offsetTop + cell.offsetHeight / 2 + 10) / boardDiv.offsetHeight) * 100;
+        const offset = (pIdx - 1.5) * 4;
+
+        piece.style.top = (top + offset) + '%';
+        piece.style.left = (left + offset) + '%';
+        shadow.style.top = (shadowTop + offset) + '%';
+        shadow.style.left = (left + offset) + '%';
     }
 }
 

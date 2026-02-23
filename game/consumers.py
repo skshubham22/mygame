@@ -501,20 +501,26 @@ class GameConsumer(AsyncWebsocketConsumer):
             else:
                 new_pos = old_pos + dice_val
                 
-                # Snakes and Ladders Map
-                # Ladders: 4->14, 9->31, 20->38, 28->84, 40->59, 51->67, 63->81, 71->91
-                # Snakes: 17->7, 54->34, 62->19, 64->60, 87->24, 93->73, 95->75, 99->78
+                # Professional Classic 10x10 Map
                 sl_map = {
-                    4: 14, 9: 31, 20: 38, 28: 84, 40: 59, 51: 67, 63: 81, 71: 91, # Ladders
-                    17: 7, 54: 34, 62: 19, 64: 60, 87: 24, 93: 73, 95: 75, 99: 78 # Snakes
+                    # Ladders
+                    2: 38, 4: 14, 8: 31, 21: 42, 28: 84, 36: 44, 51: 67, 71: 91, 80: 100,
+                    # Snakes
+                    16: 6, 47: 26, 49: 11, 56: 53, 62: 19, 64: 60, 87: 24, 93: 73, 95: 75, 98: 78
                 }
                 
-                if new_pos in sl_map:
-                    new_pos = sl_map[new_pos]
-                
+                new_pos = old_pos + dice_val
+                state['animate_from'] = old_pos
+                state['animate_to'] = new_pos
                 p_data['pos'] = new_pos
                 
-                if new_pos == 100:
+                if new_pos in sl_map:
+                    state['animate_final'] = sl_map[new_pos]
+                    p_data['pos'] = sl_map[new_pos]
+                else:
+                    state['animate_final'] = None
+                
+                if p_data['pos'] == 100:
                     state['winner'] = player
                 
                 self.next_turn_sl(state)
@@ -877,10 +883,27 @@ class GameConsumer(AsyncWebsocketConsumer):
         
         if not active_sides: return
         
+        # Track 6s for consecutive turn rule
+        if state['dice_value'] == 6:
+            state['consecutive_6s'] = state.get('consecutive_6s', 0) + 1
+        else:
+            state['consecutive_6s'] = 0
+
+        # Rule: Three 6s in a row resets turn to next player
+        if state['consecutive_6s'] >= 3:
+            state['consecutive_6s'] = 0
+            idx = active_sides.index(state['turn'])
+            state['turn'] = active_sides[(idx + 1) % len(active_sides)]
+            state['phase'] = 'ROLL'
+            state['dice_value'] = 0
+            return
+
+        # Bonus turn for 6
         if state['dice_value'] == 6 and state['winner'] is None:
-             state['phase'] = 'ROLL' # Another turn for 6
+             state['phase'] = 'ROLL'
              return
 
+        idx = active_sides.index(state['turn'])
         state['turn'] = active_sides[(idx + 1) % len(active_sides)]
         state['phase'] = 'ROLL'
         state['dice_value'] = 0
