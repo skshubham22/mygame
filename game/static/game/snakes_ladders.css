@@ -195,9 +195,10 @@
 .sl-path-snake {
     fill: none;
     stroke: url(#snakeGradient);
-    stroke-width: 12;
+    stroke-width: 4;
+    /* Scaled for 0-100 viewBox */
     stroke-linecap: round;
-    filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
     stroke-dasharray: 1000;
     stroke-dashoffset: 1000;
     animation: drawPath 2s forwards ease-in-out, snakeBreathe 3s infinite alternate;
@@ -205,11 +206,16 @@
 
 .sl-path-ladder {
     fill: none;
-    stroke: rgba(212, 175, 55, 0.8);
-    stroke-width: 12;
+    stroke: rgba(139, 69, 19, 0.7);
+    /* Brown wood */
+    stroke-width: 3;
     stroke-linecap: round;
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.5));
-    animation: ladderShine 4s infinite linear;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
+}
+
+.sl-ladder-rung {
+    stroke: rgba(210, 180, 140, 0.9);
+    stroke-width: 2;
 }
 
 @keyframes drawPath {
@@ -220,13 +226,13 @@
 
 @keyframes snakeBreathe {
     from {
-        stroke-width: 11;
-        filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.4));
+        stroke-width: 3.5;
+        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.4));
     }
 
     to {
-        stroke-width: 13;
-        filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.6));
+        stroke-width: 4.5;
+        filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.6));
     }
 }
 

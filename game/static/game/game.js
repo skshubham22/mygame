@@ -563,31 +563,54 @@ function drawSLAssets() {
         return { x, y };
     }
 
-    // Draw Ladders
+    // Draw Ladders (Side rails and rungs)
     Object.entries(ladders).forEach(([start, end]) => {
         const p1 = getCellSVGCoords(start);
         const p2 = getCellSVGCoords(end);
         if (p1 && p2) {
-            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-            path.setAttribute("d", `M ${p1.x} ${p1.y} L ${p2.x} ${p2.y}`);
-            path.classList.add("sl-path-ladder");
-            svg.appendChild(path);
+            // Main Rails (offset slightly)
+            const dx = p2.x - p1.x;
+            const dy = p2.y - p1.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const ox = -dy / dist * 1.5;
+            const oy = dx / dist * 1.5;
+
+            [1, -1].forEach(dir => {
+                const rail = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                rail.setAttribute("x1", p1.x + ox * dir);
+                rail.setAttribute("y1", p1.y + oy * dir);
+                rail.setAttribute("x2", p2.x + ox * dir);
+                rail.setAttribute("y2", p2.y + oy * dir);
+                rail.classList.add("sl-path-ladder");
+                svg.appendChild(rail);
+            });
+
+            // Rungs
+            for (let f = 0.2; f < 1; f += 0.2) {
+                const rung = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                rung.setAttribute("x1", p1.x + dx * f + ox);
+                rung.setAttribute("y1", p1.y + dy * f + oy);
+                rung.setAttribute("x2", p1.x + dx * f - ox);
+                rung.setAttribute("y2", p1.y + dy * f - oy);
+                rung.classList.add("sl-ladder-rung");
+                svg.appendChild(rung);
+            }
         }
     });
 
-    // Draw Snakes (Curved Bezier)
+    // Draw Snakes (Curved Bezier with head/tail)
     Object.entries(snakes).forEach(([start, end]) => {
         const p1 = getCellSVGCoords(start); // Head
         const p2 = getCellSVGCoords(end);   // Tail
         if (p1 && p2) {
-            // Calculate control points for a "looping" curve
             const dx = p2.x - p1.x;
             const dy = p2.y - p1.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
 
             // Perpendicular vector for curving
-            const nx = -dy / dist * 12;
-            const ny = dx / dist * 12;
+            const curveOffset = Math.min(dist * 0.4, 8); // Limit curvature based on length
+            const nx = -dy / dist * curveOffset;
+            const ny = dx / dist * curveOffset;
 
             const cp1x = p1.x + dx * 0.3 + nx;
             const cp1y = p1.y + dy * 0.3 + ny;
@@ -598,6 +621,24 @@ function drawSLAssets() {
             path.setAttribute("d", `M ${p1.x} ${p1.y} C ${cp1x} ${cp1y}, ${cp2x} ${cp2y}, ${p2.x} ${p2.y}`);
             path.classList.add("sl-path-snake");
             svg.appendChild(path);
+
+            // Add head marker (circle)
+            const head = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+            head.setAttribute("cx", p1.x);
+            head.setAttribute("cy", p1.y);
+            head.setAttribute("r", "2.5");
+            head.setAttribute("fill", "#1b5e20");
+            svg.appendChild(head);
+
+            // Add eyes
+            [0.5, -0.5].forEach(side => {
+                const eye = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                eye.setAttribute("cx", p1.x + side);
+                eye.setAttribute("cy", p1.y - 0.5);
+                eye.setAttribute("r", "0.4");
+                eye.setAttribute("fill", "white");
+                svg.appendChild(eye);
+            });
         }
     });
 }
